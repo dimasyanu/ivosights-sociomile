@@ -1,0 +1,16 @@
+services:
+  mysql8:
+    container_name: sociomile-mysql
+    image: mysql:8.4
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./_run/mysql:/var/lib/mysql
+      - ./internal/queries:/usr/share/queries
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$MYSQL_ROOT_PASSWORD", "--silent" ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}

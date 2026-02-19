@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  remove-rundir:
+    cmds:
+      - sudo rm -rf "{{.TARGET}}"
+  sleep:
+    cmds:
+      - sleep {{.DELAY_SECONDS}} # Wait for a few seconds
