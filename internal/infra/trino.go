@@ -21,8 +21,8 @@ func NewTrinoDatabase(c *config.Config) Database {
 	return database
 }
 
-func (d *trinoDatabase) GetDb() (*sql.DB, error) {
-	return d.Db, nil
+func (d *trinoDatabase) GetDb() *sql.DB {
+	return d.Db
 }
 func (d *trinoDatabase) Close() error {
 	return d.Db.Close()

@@ -15,14 +15,23 @@ type MysqlConfig struct {
 	Database string
 }
 
-func NewMysqlConfig() (*MysqlConfig, error) {
-	if err := godotenv.Load(); err != nil {
-		panic("Error loading configuration: " + err.Error())
+func NewMysqlConfig(path ...string) *MysqlConfig {
+	var envPath string
+	if len(path) > 0 {
+		envPath = path[0]
+	} else {
+		envPath = ".env"
+	}
+
+	if len(envPath) > 0 {
+		if err := godotenv.Load(envPath); err != nil {
+			panic("Error loading configuration: " + err.Error())
+		}
 	}
 
 	port, err := strconv.Atoi(os.Getenv("MYSQL_PORT"))
 	if err != nil {
-		return nil, err
+		panic("Invalid MYSQL_PORT: " + err.Error())
 	}
 	return &MysqlConfig{
 		Host:     os.Getenv("MYSQL_HOST"),
@@ -30,5 +39,5 @@ func NewMysqlConfig() (*MysqlConfig, error) {
 		User:     os.Getenv("MYSQL_USER"),
 		Password: os.Getenv("MYSQL_PASSWORD"),
 		Database: os.Getenv("MYSQL_DATABASE"),
-	}, nil
+	}
 }

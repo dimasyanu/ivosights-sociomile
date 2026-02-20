@@ -1,0 +1,14 @@
+package repository
+
+import (
+	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/google/uuid"
+)
+
+type UserRepository interface {
+	GetUserByID(id uuid.UUID) (*domain.UserEntity, error)
+	GetUserByEmail(email string) (*domain.UserEntity, error)
+	CreateUser(user *domain.UserEntity) (uuid.UUID, error)
+	UpdateUser(user *domain.UserEntity) error
+	DeleteUser(id uuid.UUID) error
+}

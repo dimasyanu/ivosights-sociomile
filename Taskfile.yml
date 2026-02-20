@@ -21,7 +21,6 @@ tasks:
       - mkdir -p ./_run/mysql
       - docker-compose up -d --wait
       - task: migrate
-
   stop:
     cmds:
       - docker-compose down
@@ -29,7 +28,12 @@ tasks:
     cmds:
       - docker-compose down --volumes --remove-orphans
       - task: os:remove-rundir
+  reinit:
+    cmds:
+      - task: clean
+      - task: start-containers
   
   default: 
     cmds:
+      - ls .env
       - task: start-containers
