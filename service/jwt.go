@@ -1,0 +1,55 @@
+package service
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/dimasyanu/ivosights-sociomile/config"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type Claims struct {
+	Email string `json:"email"`
+
+	jwt.RegisteredClaims
+}
+
+type JwtService struct {
+	config *config.JwtConfig
+}
+
+func NewJwtService(c *config.JwtConfig) *JwtService {
+	return &JwtService{
+		config: c,
+	}
+}
+
+func (s *JwtService) GenerateJWT(email string) (string, error) {
+	jwtKey := []byte(s.config.SecretKey)
+
+	// Set the expiration time for the token
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	// Create the claims (payload)
+	claims := &Claims{
+		Email: email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			// In JWT, the exp (expiration time) claim is a NumericDate.
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "localhost", // The issuer of the token
+			Subject:   email,       // The subject of the token (e.g., user ID)
+		},
+	}
+
+	// Declare the token with the signing method and claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with the secret key to get the complete encoded token as a string
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+
+	return tokenString, nil
+}

@@ -11,12 +11,14 @@ import (
 )
 
 type AuthService struct {
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepository
+	JwtService *JwtService
 }
 
-func NewAuthService(userRepo repository.UserRepository) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, jwtService *JwtService) *AuthService {
 	return &AuthService{
-		userRepo: userRepo,
+		userRepo:   userRepo,
+		JwtService: jwtService,
 	}
 }
 
@@ -41,7 +43,11 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 
 	// Generate JWT token
-	token := "dummy_token" // Replace with actual token generation logic
+	token, err := s.JwtService.GenerateJWT(email)
+	if err != nil {
+		log.Println(err.Error())
+		return "", fiber.ErrInternalServerError
+	}
 
 	return token, nil
 }
@@ -52,13 +58,13 @@ func (s *AuthService) Register(name, email, password string) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Email already in use")
 	}
 	if !strings.Contains(err.Error(), "no rows in result set") {
-		log.Fatal(err.Error())
+		log.Println(err.Error())
 		return fiber.ErrInternalServerError
 	}
 
 	passwordHash, err := infra.HashPassword(password)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Println(err.Error())
 		return fiber.ErrInternalServerError
 	}
 
@@ -69,7 +75,7 @@ func (s *AuthService) Register(name, email, password string) error {
 	}
 
 	if _, err = s.userRepo.CreateUser(user); err != nil {
-		log.Fatal(err.Error())
+		log.Println(err.Error())
 		return fiber.ErrInternalServerError
 	}
 

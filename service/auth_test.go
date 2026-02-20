@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"database/sql"
@@ -11,19 +11,19 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/service"
-	"github.com/dimasyanu/ivosights-sociomile/tests"
+	"github.com/dimasyanu/ivosights-sociomile/util"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 )
 
 const dbName = "test_login"
+const envPath = "../.env"
 
 type AuthTestSuite struct {
 	t *testing.T
 
 	mysqlCfg *config.MysqlConfig
-	authSvc  *service.AuthService
+	authSvc  *AuthService
 	db       *sql.DB
 
 	suite.Suite
@@ -39,9 +39,9 @@ func (s *AuthTestSuite) SetupSuite() {
 	var err error
 
 	// Load configuration
-	s.mysqlCfg = config.NewMysqlConfig("../../.env")
+	s.mysqlCfg = config.NewMysqlConfig(envPath)
 	s.mysqlCfg.Database = dbName
-	if err = tests.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+	if err = util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
@@ -51,7 +51,8 @@ func (s *AuthTestSuite) SetupSuite() {
 		s.T().Fatalf("Failed to connect to database: %v", err)
 	}
 	userRepo := mysqlrepo.NewUserRepository(s.db)
-	s.authSvc = service.NewAuthService(userRepo)
+	jwtService := NewJwtService(config.NewJwtConfig(envPath))
+	s.authSvc = NewAuthService(userRepo, jwtService)
 
 	// Create a test user in the database
 	password := "password!123"
@@ -68,6 +69,7 @@ func (s *AuthTestSuite) SetupSuite() {
 		UpdatedAt:    time.Now(),
 		UpdatedBy:    "system",
 	})
+
 	if err != nil {
 		s.T().Fatalf("Failed to create user: %v", err)
 	}
@@ -77,7 +79,7 @@ func (s *AuthTestSuite) SetupSuite() {
 func (s *AuthTestSuite) TearDownSuite() {
 	s.db.Exec("DELETE FROM users;") // Clear users table after all tests
 	s.db.Close()                    // Close the database connection after all tests
-	if err := tests.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 }

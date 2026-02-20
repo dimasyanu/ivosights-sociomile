@@ -45,5 +45,6 @@ tasks:
   default: 
     cmds:
       - ls .env
+      - goose -version
       - task: start-containers
       # - task: run-tests

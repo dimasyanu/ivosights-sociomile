@@ -7,7 +7,7 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/config"
 )
 
-func NewTrinoDatabase(c *config.Config) *sql.DB {
+func NewTrinoDatabase(c *config.TrinoConfig) *sql.DB {
 	dsn := "http://user@localhost:8080?catalog=default&schema=test"
 	db, err := sql.Open("trino", dsn)
 	if err != nil {

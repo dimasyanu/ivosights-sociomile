@@ -11,8 +11,8 @@ type RestConfig struct {
 	Port uint16
 }
 
-func NewRestConfig() *RestConfig {
-	if err := godotenv.Load(); err != nil {
+func NewRestConfig(path ...string) *RestConfig {
+	if err := godotenv.Load(path...); err != nil {
 		panic("Error loading configuration: " + err.Error())
 	}
 

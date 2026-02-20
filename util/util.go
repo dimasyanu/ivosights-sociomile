@@ -1,4 +1,4 @@
-package tests
+package util
 
 import (
 	"database/sql"
@@ -42,7 +42,7 @@ func CrateMysqlDatabase(c *config.MysqlConfig) error {
 		if err := goose.SetDialect("mysql"); err != nil {
 			log.Fatalf("An error occured: %v", err)
 		}
-		if err := goose.Up(db, "../../sql/migrations"); err != nil {
+		if err := goose.Up(db, "../sql/migrations"); err != nil {
 			log.Fatalf("An error occured: %v", err)
 		}
 	})

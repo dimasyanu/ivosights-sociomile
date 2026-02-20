@@ -101,7 +101,7 @@ func (r *userMysqlRepository) UpdateUser(user *domain.UserEntity) error {
 
 	query := "UPDATE users SET " + cols + " WHERE id = ?"
 	vals = append(vals, user.ID)
-	_, err := r.db.ExecContext(context.Background(), query, append(vals, user.ID)...)
+	_, err := r.db.ExecContext(context.Background(), query, vals...)
 	if err != nil {
 		return err
 	}
