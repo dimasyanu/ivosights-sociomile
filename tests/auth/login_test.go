@@ -1,42 +1,55 @@
 package auth
 
 import (
+	"database/sql"
 	"errors"
+	"log"
 	"testing"
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/common/httperr"
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
 	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/tests"
+	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 )
+
+const dbName = "test_login"
 
 type AuthTestSuite struct {
 	t *testing.T
 
-	authSvc *service.AuthService
-	db      infra.Database
+	mysqlCfg *config.MysqlConfig
+	authSvc  *service.AuthService
+	db       *sql.DB
 
 	suite.Suite
 }
 
 func TestAuthTestSuite(t *testing.T) {
+	log.SetFlags(log.Lshortfile)
 	suite.Run(t, new(AuthTestSuite))
 }
 
 // Setup code before each test
 func (s *AuthTestSuite) SetupSuite() {
-	// Load configuration
-	mysqlCfg := config.NewMysqlConfig("../../.env")
 	var err error
-	s.db, err = infra.NewMySQLDatabase(mysqlCfg)
+
+	// Load configuration
+	s.mysqlCfg = config.NewMysqlConfig("../../.env")
+	s.mysqlCfg.Database = dbName
+	if err = tests.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+		s.T().Fatalf("Failed to create MySQL database: %v", err)
+	}
+
+	// Initialize database and repositories
+	s.db, err = infra.NewMySQLDatabase(s.mysqlCfg)
 	if err != nil {
 		s.T().Fatalf("Failed to connect to database: %v", err)
 	}
-	s.db.GetDb().Exec("DELETE FROM users;") // Clear users table before each test
 	userRepo := mysqlrepo.NewUserRepository(s.db)
 	s.authSvc = service.NewAuthService(userRepo)
 
@@ -48,7 +61,7 @@ func (s *AuthTestSuite) SetupSuite() {
 	}
 	_, err = userRepo.CreateUser(&domain.UserEntity{
 		Name:         "Test User",
-		Email:        "test_login_success@mail.com",
+		Email:        "test_login@mail.com",
 		PasswordHash: hashedPassword,
 		CreatedAt:    time.Now(),
 		CreatedBy:    "system",
@@ -62,24 +75,41 @@ func (s *AuthTestSuite) SetupSuite() {
 
 // Cleanup code after each test
 func (s *AuthTestSuite) TearDownSuite() {
-	s.db.GetDb().Exec("DELETE FROM users;") // Clear users table after all tests
-	s.db.Close()                            // Close the database connection after all tests
+	s.db.Exec("DELETE FROM users;") // Clear users table after all tests
+	s.db.Close()                    // Close the database connection after all tests
+	if err := tests.DropMysqlDatabase(s.mysqlCfg); err != nil {
+		s.T().Fatalf("Failed to drop MySQL database: %v", err)
+	}
 }
 
 //========= Tests =========
 
 // Test successful login
 func (s *AuthTestSuite) TestLoginSuccess() {
-	token, err := s.authSvc.Login("test_login_success@mail.com", "password!123")
+	token, err := s.authSvc.Login("test_login@mail.com", "password!123")
 	s.NoError(err, "Expected no error on successful login")
 	s.NotEmpty(token, "Expected token to be generated on successful login")
 }
 
 // Test failed login
 func (s *AuthTestSuite) TestLoginFailure() {
-	token, err := s.authSvc.Login("test_login_failure@mail.com", "wrongpassword")
+	token, err := s.authSvc.Login("test_wrong_email@mail.com", "password!123")
 	s.Error(err)
-	s.Equal(err.Error(), "Invalid email or password")
-	s.True(errors.Is(err, httperr.Unauthorized), "Expected error to be Unauthorized")
+	s.Equal("Invalid email or password", err.Error())
 	s.Empty(token, "Expected token to be empty on failed login")
+
+	ferr := &fiber.Error{}
+	if errors.As(err, &ferr) {
+		s.Equal(fiber.StatusUnauthorized, ferr.Code, "Expected status code to be 401 Unauthorized")
+		s.Equal("Invalid email or password", ferr.Message, "Expected error message to be 'Invalid email or password'")
+	}
+
+	token, err = s.authSvc.Login("test_login@mail.com", "wrongpassword")
+	s.Error(err)
+	s.Equal("Invalid email or password", err.Error())
+	s.Empty(token, "Expected token to be empty on failed login")
+	if errors.As(err, &ferr) {
+		s.Equal(fiber.StatusUnauthorized, ferr.Code, "Expected status code to be 401 Unauthorized")
+		s.Equal("Invalid email or password", ferr.Message, "Expected error message to be 'Invalid email or password'")
+	}
 }

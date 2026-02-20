@@ -1,0 +1,5 @@
+CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'admin_password';
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
+
+CREATE DATABASE IF NOT EXISTS <database_name>;

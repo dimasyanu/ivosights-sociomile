@@ -6,9 +6,10 @@ services:
       - "3306:3306"
     volumes:
       - ./_run/mysql:/var/lib/mysql
-      - ./internal/queries:/usr/share/queries
+      - ./sql:/usr/share/queries
+    command: mysqld --mysql-native-password=ON
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$MYSQL_ROOT_PASSWORD", "--silent" ]
+      test: ["CMD", "mysql", "-uroot", "-p$MYSQL_ROOT_PASSWORD", "-e", "SELECT 1"]
       interval: 3s
       timeout: 3s
       retries: 20

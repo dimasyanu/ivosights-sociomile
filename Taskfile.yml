@@ -5,29 +5,38 @@ dotenv: ['.env']
 includes:
   os:
     taskfile: Taskfile_{{OS}}.yml
-    vars:
-      TARGET: "./_run"
 
 tasks:
   build:
     cmds:
       - go build -o sociomile ./cmd/main.go
+
   migrate:
     cmds:
-      - docker exec -it sociomile-mysql /bin/bash -c 'mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} < /usr/share/queries/dbuser.sql'
+      - docker exec -it sociomile-mysql /bin/bash -c "sed 's/<database_name>/{{.MYSQL_DATABASE}}/g' /usr/share/queries/init.sql | mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}}"
+      - goose up
 
   start-containers:
     cmds:
       - mkdir -p ./_run/mysql
       - docker-compose up -d --wait
       - task: migrate
+
+  run-tests:
+    cmds:
+      - go test ./... | grep -v '?'
+
   stop:
     cmds:
       - docker-compose down
+
   clean:
     cmds:
       - docker-compose down --volumes --remove-orphans
       - task: os:remove-rundir
+        vars:
+          TARGET: "./_run"
+
   reinit:
     cmds:
       - task: clean
@@ -37,3 +46,4 @@ tasks:
     cmds:
       - ls .env
       - task: start-containers
+      # - task: run-tests

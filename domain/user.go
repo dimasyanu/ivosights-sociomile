@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type UserEntity struct {
@@ -13,11 +12,11 @@ type UserEntity struct {
 	Email        string    `gorm:"column:email;unique;not null"`
 	PasswordHash string    `gorm:"column:password_hash;not null"`
 
-	CreatedAt time.Time       `gorm:"column:created_at;autoCreateTime;not null"`
-	CreatedBy string          `gorm:"column:created_by;not null"`
-	UpdatedAt time.Time       `gorm:"column:updated_at;autoUpdateTime;not null"`
-	UpdatedBy string          `gorm:"column:updated_by;not null"`
-	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at;nullable"`
+	CreatedAt time.Time  `gorm:"column:created_at;autoCreateTime;not null"`
+	CreatedBy string     `gorm:"column:created_by;not null"`
+	UpdatedAt time.Time  `gorm:"column:updated_at;autoUpdateTime;not null"`
+	UpdatedBy string     `gorm:"column:updated_by;not null"`
+	DeletedAt *time.Time `gorm:"column:deleted_at;nullable"`
 }
 
 type User struct {
