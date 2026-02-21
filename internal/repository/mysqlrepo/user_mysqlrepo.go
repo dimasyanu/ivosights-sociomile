@@ -7,6 +7,7 @@ import (
 
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )
 
@@ -137,27 +138,47 @@ func (r *userMysqlRepository) CreateUser(user *domain.UserEntity) (uuid.UUID, er
 	return id, nil
 }
 
-func (r *userMysqlRepository) UpdateUser(user *domain.UserEntity) error {
-	pairs := map[string]any{
-		"name":  user.Name,
-		"email": user.Email,
-		"roles": user.Roles,
-
-		"created_at": user.CreatedAt,
-		"created_by": user.CreatedBy,
-		"updated_at": user.UpdatedAt,
-		"updated_by": user.UpdatedBy,
+func (r *userMysqlRepository) UpdateUser(user *domain.UserEntity, data map[string]any) (*domain.UserEntity, error) {
+	var name, email, roles string
+	query := "SELECT name, email, roles FROM users WHERE id = UUID_TO_BIN(?)"
+	row := r.db.QueryRowContext(context.Background(), query, user.ID.String())
+	if err := row.Scan(&name, &email, &roles); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fiber.ErrNotFound
+		}
+		return nil, err
 	}
+
+	pairs := map[string]any{
+		"deleted_at": user.DeletedAt,
+	}
+
+	if !user.UpdatedAt.IsZero() {
+		pairs["updated_at"] = user.UpdatedAt
+		pairs["updated_by"] = user.UpdatedBy
+	}
+
+	if val, ok := data["name"]; ok && user.Name != name {
+		pairs["name"] = val
+	}
+
+	if val, ok := data["email"]; ok && user.Email != email {
+		pairs["email"] = val
+	}
+
+	if val, ok := data["roles"]; ok && user.Roles != roles {
+		pairs["roles"] = val
+	}
+
 	cols, vals := MapForUpdate(pairs)
 
-	query := "UPDATE users SET " + cols + " WHERE id = UUID_TO_BIN(?)"
+	query = "UPDATE users SET " + cols + " WHERE id = UUID_TO_BIN(?)"
 	vals = append(vals, user.ID.String())
-	_, err := r.db.ExecContext(context.Background(), query, vals...)
-	if err != nil {
-		return err
+	if _, err := r.db.ExecContext(context.Background(), query, vals...); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return user, nil
 }
 
 func (r *userMysqlRepository) DeleteUser(id uuid.UUID) error {

@@ -9,8 +9,9 @@ type UserCreateRequest struct {
 }
 
 type UserUpdateRequest struct {
-	Name  string `json:"name,omitempty"`
-	Email string `json:"email,omitempty" validate:"omitempty,email"`
+	Name  *string  `json:"name,omitempty"`
+	Email *string  `json:"email,omitempty" validate:"omitempty,email"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 type ChangePasswordRequest struct {

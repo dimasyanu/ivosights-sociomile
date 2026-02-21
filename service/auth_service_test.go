@@ -3,7 +3,6 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"testing"
 	"time"
 
@@ -20,14 +19,14 @@ type AuthServiceTestSuite struct {
 	t *testing.T
 
 	mysqlCfg *config.MysqlConfig
-	authSvc  *AuthService
+	svc      *AuthService
 	db       *sql.DB
 
 	suite.Suite
 }
 
 func TestAuthTestSuite(t *testing.T) {
-	log.SetFlags(log.Lshortfile)
+	// log.SetFlags(log.Lshortfile)
 	suite.Run(t, new(AuthServiceTestSuite))
 }
 
@@ -36,23 +35,25 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 	const dbName = "test_login"
 	const envPath = "../.env"
 
-	var err error
-
 	// Load configuration
 	s.mysqlCfg = config.NewMysqlConfig(envPath)
 	s.mysqlCfg.Database = dbName
-	if err = util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+
+	// Create test database
+	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
+	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
 	// Initialize database and repositories
+	var err error
 	s.db, err = infra.NewMySQLDatabase(s.mysqlCfg)
 	if err != nil {
 		s.T().Fatalf("Failed to connect to database: %v", err)
 	}
 	userRepo := mysqlrepo.NewUserRepository(s.db)
 	jwtService := NewJwtService(config.NewJwtConfig(envPath))
-	s.authSvc = NewAuthService(userRepo, jwtService)
+	s.svc = NewAuthService(userRepo, jwtService)
 
 	// Create a test user in the database
 	password := "password!123"
@@ -78,8 +79,9 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 
 // Cleanup code after each test
 func (s *AuthServiceTestSuite) TearDownSuite() {
-	s.db.Exec("DELETE FROM users;") // Clear users table after all tests
-	s.db.Close()                    // Close the database connection after all tests
+	s.db.Close() // Close the database connection after all tests
+
+	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
 	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
@@ -89,14 +91,14 @@ func (s *AuthServiceTestSuite) TearDownSuite() {
 
 // Test successful login
 func (s *AuthServiceTestSuite) TestLoginSuccess() {
-	token, err := s.authSvc.Login("test_login@mail.com", "password!123")
+	token, err := s.svc.Login("test_login@mail.com", "password!123")
 	s.NoError(err, "Expected no error on successful login")
 	s.NotEmpty(token, "Expected token to be generated on successful login")
 }
 
 // Test failed login
 func (s *AuthServiceTestSuite) TestLoginFailure() {
-	token, err := s.authSvc.Login("test_wrong_email@mail.com", "password!123")
+	token, err := s.svc.Login("test_wrong_email@mail.com", "password!123")
 	s.Error(err)
 	s.Equal("Invalid email or password", err.Error())
 	s.Empty(token, "Expected token to be empty on failed login")
@@ -107,7 +109,7 @@ func (s *AuthServiceTestSuite) TestLoginFailure() {
 		s.Equal("Invalid email or password", ferr.Message, "Expected error message to be 'Invalid email or password'")
 	}
 
-	token, err = s.authSvc.Login("test_login@mail.com", "wrongpassword")
+	token, err = s.svc.Login("test_login@mail.com", "wrongpassword")
 	s.Error(err)
 	s.Equal("Invalid email or password", err.Error())
 	s.Empty(token, "Expected token to be empty on failed login")

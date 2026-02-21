@@ -22,9 +22,9 @@ tasks:
       - docker-compose up -d --wait
       - task: migrate
 
-  run-tests:
+  test:
     cmds:
-      - go test ./... | grep -v '?'
+      - go test -count=1 ./... | grep -v '?'
 
   stop:
     cmds:

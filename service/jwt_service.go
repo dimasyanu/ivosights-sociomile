@@ -53,3 +53,37 @@ func (s *JwtService) GenerateJWT(email string) (string, error) {
 
 	return tokenString, nil
 }
+
+func (s *JwtService) ValidateJWT(tokenString string) (string, error) {
+	jwtKey := []byte(s.config.SecretKey)
+
+	claims := &Claims{}
+
+	// Parse the token
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		// Ensure the signing method is HMAC and not something else
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtKey, nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	// Validate the token and claims
+	if !token.Valid {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	return claims.Email, nil
+}
+
+func (s *JwtService) RefreshJWT(tokenString string) (string, error) {
+	email, err := s.ValidateJWT(tokenString)
+	if err != nil {
+		return "", fmt.Errorf("invalid token: %w", err)
+	}
+
+	return s.GenerateJWT(email)
+}

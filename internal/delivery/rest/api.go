@@ -10,31 +10,31 @@ import (
 )
 
 type RestApi struct {
-	app  *fiber.App
+	App  *fiber.App
 	port uint16
 }
 
-func NewRestApi(c *config.RestConfig, db *sql.DB) *RestApi {
+func SetupApp(db *sql.DB) *fiber.App {
 	app := fiber.New()
 
-	app.Use(func(c fiber.Ctx) error {
-		return c.Next()
-	})
+	RegisterRoutes(app, db, config.EnvPath)
 
-	RegisterRoutes(app, db)
-
+	// Add OpenAPI UI route
 	cfg := scalar.Config{
 		RawSpecUrl: "/openapi.json",
 	}
-
 	app.Get("/docs/*", scalar.New(cfg))
 
+	return app
+}
+
+func NewRestApi(c *config.RestConfig, db *sql.DB) *RestApi {
 	return &RestApi{
-		app:  app,
+		App:  SetupApp(db),
 		port: c.Port,
 	}
 }
 
 func (api *RestApi) Start() {
-	api.app.Listen(":" + fmt.Sprint(api.port))
+	api.App.Listen(":" + fmt.Sprint(api.port))
 }

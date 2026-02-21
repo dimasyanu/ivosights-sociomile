@@ -50,3 +50,32 @@ func (h *AuthHandler) Login(ctx fiber.Ctx) error {
 		},
 	})
 }
+
+func (h *AuthHandler) AuthorizationMiddleware(ctx fiber.Ctx) error {
+	authHeader := ctx.Get("Authorization")
+	if authHeader == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Missing Authorization header",
+		})
+	}
+
+	token := authHeader[len("Bearer "):]
+	if token == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Invalid Authorization header format",
+		})
+	}
+
+	user, err := h.svc.ValidateToken(token)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Invalid or expired token",
+		})
+	}
+
+	ctx.Locals("user", user)
+	return ctx.Next()
+}

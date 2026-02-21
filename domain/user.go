@@ -29,8 +29,8 @@ type User struct {
 }
 
 type UserFilter struct {
-	Name  string `form:"name"`
-	Email string `form:"email"`
+	Name  *string `form:"name"`
+	Email *string `form:"email"`
 
 	Filter
 }
@@ -41,18 +41,5 @@ func (u *UserEntity) ToDto() *User {
 		Name:  u.Name,
 		Email: u.Email,
 		Roles: strings.Split(u.Roles, ","),
-	}
-}
-
-func (u *User) ToEntity() *UserEntity {
-	return &UserEntity{
-		ID:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		Roles:     strings.Join(u.Roles, ","),
-		CreatedAt: time.Now(),
-		CreatedBy: "system", // Set this to the actual creator's identifier
-		UpdatedAt: time.Now(),
-		UpdatedBy: "system", // Set this to the actual updater's identifier
 	}
 }

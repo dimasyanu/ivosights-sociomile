@@ -44,7 +44,16 @@ func (s *UserService) GetUserByID(id uuid.UUID) (*domain.User, error) {
 	return dto, nil
 }
 
-func (s *UserService) CreateUser(name, email, password string, roles []string, actor string) (uuid.UUID, error) {
+func (s *UserService) GetUserByEmail(email string) (*domain.User, error) {
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	dto := user.ToDto()
+	return dto, nil
+}
+
+func (s *UserService) CreateUser(name, email, password string, roles []string, pic string) (uuid.UUID, error) {
 	passwordHash, err := util.HashPassword(password)
 	if err != nil {
 		return uuid.Nil, err
@@ -55,9 +64,9 @@ func (s *UserService) CreateUser(name, email, password string, roles []string, a
 		PasswordHash: passwordHash,
 		Roles:        strings.Join(roles, ","),
 		CreatedAt:    time.Now(),
-		CreatedBy:    actor,
+		CreatedBy:    pic,
 		UpdatedAt:    time.Now(),
-		UpdatedBy:    actor,
+		UpdatedBy:    pic,
 	}
 	id, err := s.repo.CreateUser(user)
 	if err != nil {
@@ -66,20 +75,55 @@ func (s *UserService) CreateUser(name, email, password string, roles []string, a
 	return id, nil
 }
 
-func (s *UserService) UpdateUser(id uuid.UUID, name, email, password string) error {
-	passwordHash, err := util.HashPassword(password)
+func (s *UserService) UpdateUser(id uuid.UUID, name *string, email *string, roles []string, pic string) (*domain.User, error) {
+	user := &domain.UserEntity{
+		ID:        id,
+		UpdatedAt: time.Now(),
+		UpdatedBy: pic,
+	}
+	data := map[string]any{}
+	if name != nil {
+		data["name"] = *name
+	}
+	if email != nil {
+		data["email"] = *email
+	}
+	if len(roles) > 0 {
+		data["roles"] = strings.Join(roles, ",")
+	}
+
+	user, err := s.repo.UpdateUser(user, data)
+	if err != nil {
+		return nil, err
+	}
+	return user.ToDto(), nil
+}
+
+func (s *UserService) UpdateUserPassword(id uuid.UUID, newPassword string, pic string) error {
+	passwordHash, err := util.HashPassword(newPassword)
 	if err != nil {
 		return err
 	}
 	user := &domain.UserEntity{
 		ID:           id,
-		Name:         name,
-		Email:        email,
 		PasswordHash: passwordHash,
+		UpdatedAt:    time.Now(),
+		UpdatedBy:    pic,
 	}
-	return s.repo.UpdateUser(user)
+	data := map[string]any{
+		"password_hash": user.PasswordHash,
+	}
+	_, err = s.repo.UpdateUser(user, data)
+	return err
 }
 
-func (s *UserService) DeleteUser(id uuid.UUID) error {
-	return s.repo.DeleteUser(id)
+func (s *UserService) DeleteUser(id uuid.UUID, pic string) error {
+	now := time.Now()
+	_, err := s.repo.UpdateUser(&domain.UserEntity{
+		ID:        id,
+		DeletedAt: &now,
+	}, map[string]any{
+		"deleted_at": &now,
+	})
+	return err
 }
