@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
+	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/handler"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
 	"github.com/dimasyanu/ivosights-sociomile/service"
@@ -19,7 +20,7 @@ func RegisterRoutes(app *fiber.App, db *sql.DB) {
 	authService := service.NewAuthService(userRepo, jwtService)
 
 	// Initialize handlers with their respective services and repositories
-	authHandler := NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService)
 
 	// == Public Routes ==
 

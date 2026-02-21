@@ -28,6 +28,13 @@ type User struct {
 	Roles []string  `json:"roles"`
 }
 
+type UserFilter struct {
+	Name  string `form:"name"`
+	Email string `form:"email"`
+
+	Filter
+}
+
 func (u *UserEntity) ToDto() *User {
 	return &User{
 		ID:    u.ID,

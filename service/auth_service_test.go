@@ -16,10 +16,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const dbName = "test_login"
-const envPath = "../.env"
-
-type AuthTestSuite struct {
+type AuthServiceTestSuite struct {
 	t *testing.T
 
 	mysqlCfg *config.MysqlConfig
@@ -31,11 +28,14 @@ type AuthTestSuite struct {
 
 func TestAuthTestSuite(t *testing.T) {
 	log.SetFlags(log.Lshortfile)
-	suite.Run(t, new(AuthTestSuite))
+	suite.Run(t, new(AuthServiceTestSuite))
 }
 
 // Setup code before each test
-func (s *AuthTestSuite) SetupSuite() {
+func (s *AuthServiceTestSuite) SetupSuite() {
+	const dbName = "test_login"
+	const envPath = "../.env"
+
 	var err error
 
 	// Load configuration
@@ -64,6 +64,7 @@ func (s *AuthTestSuite) SetupSuite() {
 		Name:         "Test User",
 		Email:        "test_login@mail.com",
 		PasswordHash: hashedPassword,
+		Roles:        domain.RoleAgent,
 		CreatedAt:    time.Now(),
 		CreatedBy:    "system",
 		UpdatedAt:    time.Now(),
@@ -76,7 +77,7 @@ func (s *AuthTestSuite) SetupSuite() {
 }
 
 // Cleanup code after each test
-func (s *AuthTestSuite) TearDownSuite() {
+func (s *AuthServiceTestSuite) TearDownSuite() {
 	s.db.Exec("DELETE FROM users;") // Clear users table after all tests
 	s.db.Close()                    // Close the database connection after all tests
 	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
@@ -87,14 +88,14 @@ func (s *AuthTestSuite) TearDownSuite() {
 //========= Tests =========
 
 // Test successful login
-func (s *AuthTestSuite) TestLoginSuccess() {
+func (s *AuthServiceTestSuite) TestLoginSuccess() {
 	token, err := s.authSvc.Login("test_login@mail.com", "password!123")
 	s.NoError(err, "Expected no error on successful login")
 	s.NotEmpty(token, "Expected token to be generated on successful login")
 }
 
 // Test failed login
-func (s *AuthTestSuite) TestLoginFailure() {
+func (s *AuthServiceTestSuite) TestLoginFailure() {
 	token, err := s.authSvc.Login("test_wrong_email@mail.com", "password!123")
 	s.Error(err)
 	s.Equal("Invalid email or password", err.Error())

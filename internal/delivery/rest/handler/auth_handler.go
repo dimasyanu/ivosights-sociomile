@@ -1,4 +1,4 @@
-package rest
+package handler
 
 import (
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
@@ -43,23 +43,10 @@ func (h *AuthHandler) Login(ctx fiber.Ctx) error {
 	}
 
 	return ctx.JSON(&models.Res[models.LoginResponse]{
-		Status: fiber.StatusOK,
-		Data: models.LoginResponse{
-			Token: token,
-		},
-	})
-}
-
-// Logout godoc
-// @Summary      User logout
-// @Description  Invalidate user session (if using server-side sessions)
-// @Tags         auth
-// @Produce      json
-// @Success      200 {object} any
-// @Router       /api/v1/auth/logout [post]
-func (h *AuthHandler) Logout(ctx fiber.Ctx) error {
-	return ctx.JSON(&models.Res[any]{
 		Status:  fiber.StatusOK,
-		Message: "Logged out successfully",
+		Message: "Login successful",
+		Data: models.LoginResponse{
+			AccessToken: token,
+		},
 	})
 }

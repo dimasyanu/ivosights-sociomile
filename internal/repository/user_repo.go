@@ -6,6 +6,7 @@ import (
 )
 
 type UserRepository interface {
+	GetUsers(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error)
 	GetUserByID(id uuid.UUID) (*domain.UserEntity, error)
 	GetUserByEmail(email string) (*domain.UserEntity, error)
 	CreateUser(user *domain.UserEntity) (uuid.UUID, error)

@@ -2,14 +2,18 @@ package main
 
 import (
 	"database/sql"
+	"sync"
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 
 	_ "github.com/dimasyanu/ivosights-sociomile/docs"
 	_ "github.com/go-sql-driver/mysql"
 )
+
+var once sync.Once
 
 func main() {
 	db := ConnectToDatabase()
@@ -22,10 +26,15 @@ func main() {
 
 func ConnectToDatabase() *sql.DB {
 	mysqlCfg := config.NewMysqlConfig(config.EnvPath)
-	db, err := sql.Open(mysqlCfg.Driver, mysqlCfg.Dsn)
-	if err != nil {
-		panic("Error connecting to database: " + err.Error())
-	}
+
+	var db *sql.DB
+	var err error
+	once.Do(func() {
+		db, err = infra.NewMySQLDatabase(mysqlCfg)
+		if err != nil {
+			panic("Error connecting to database: " + err.Error())
+		}
+	})
 
 	if err := db.Ping(); err != nil {
 		panic("Error pinging database: " + err.Error())

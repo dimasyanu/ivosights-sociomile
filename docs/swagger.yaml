@@ -35,26 +35,11 @@ paths:
             $ref: '#/definitions/models.LoginResponse'
         "400":
           description: Bad Request
-          schema:
-            type: object
+          schema: {}
         "401":
           description: Unauthorized
-          schema:
-            type: object
+          schema: {}
       summary: User login
-      tags:
-      - auth
-  /api/v1/auth/logout:
-    post:
-      description: Invalidate user session (if using server-side sessions)
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: User logout
       tags:
       - auth
 swagger: "2.0"
