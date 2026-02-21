@@ -56,7 +56,7 @@ func (s *AuthTestSuite) SetupSuite() {
 
 	// Create a test user in the database
 	password := "password!123"
-	hashedPassword, err := infra.HashPassword(password)
+	hashedPassword, err := util.HashPassword(password)
 	if err != nil {
 		s.T().Fatalf("Failed to hash password: %v", err)
 	}

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/dimasyanu/ivosights-sociomile/util"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -34,7 +34,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 
 	// Verify password
-	if err = infra.CheckPasswordHash(password, user.PasswordHash); err != nil {
+	if err = util.CheckPasswordHash(password, user.PasswordHash); err != nil {
 		if strings.Contains(err.Error(), "hashedPassword is not the hash") {
 			return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
 		}
@@ -62,7 +62,7 @@ func (s *AuthService) Register(name, email, password string) error {
 		return fiber.ErrInternalServerError
 	}
 
-	passwordHash, err := infra.HashPassword(password)
+	passwordHash, err := util.HashPassword(password)
 	if err != nil {
 		log.Println(err.Error())
 		return fiber.ErrInternalServerError

@@ -24,7 +24,7 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler {
 // @Success      200 {object} models.LoginResponse
 // @Failure      400 {object} any
 // @Failure      401 {object} any
-// @Router       /auth/login [post]
+// @Router       /api/v1/auth/login [post]
 func (h *AuthHandler) Login(ctx fiber.Ctx) error {
 	req := new(models.LoginRequest)
 	if err := ctx.Bind().Body(req); err != nil || req.Email == "" || req.Password == "" {
@@ -56,7 +56,7 @@ func (h *AuthHandler) Login(ctx fiber.Ctx) error {
 // @Tags         auth
 // @Produce      json
 // @Success      200 {object} any
-// @Router       /auth/logout [post]
+// @Router       /api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(ctx fiber.Ctx) error {
 	return ctx.JSON(&models.Res[any]{
 		Status:  fiber.StatusOK,
