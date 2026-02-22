@@ -24,11 +24,11 @@ func NewJwtService(c *config.JwtConfig) *JwtService {
 	}
 }
 
-func (s *JwtService) GenerateJWT(email string) (string, error) {
+func (s *JwtService) GenerateJWT(email string, duration time.Duration) (string, error) {
 	jwtKey := []byte(s.config.SecretKey)
 
 	// Set the expiration time for the token
-	expirationTime := time.Now().Add(24 * time.Hour)
+	expirationTime := time.Now().Add(duration)
 
 	// Create the claims (payload)
 	claims := &Claims{
@@ -85,5 +85,5 @@ func (s *JwtService) RefreshJWT(tokenString string) (string, error) {
 		return "", fmt.Errorf("invalid token: %w", err)
 	}
 
-	return s.GenerateJWT(email)
+	return s.GenerateJWT(email, time.Hour*24)
 }

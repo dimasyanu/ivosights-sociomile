@@ -6,9 +6,9 @@ import (
 )
 
 type UserRepository interface {
-	GetUsers(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error)
-	GetUserByID(id uuid.UUID) (*domain.UserEntity, error)
-	GetUserByEmail(email string) (*domain.UserEntity, error)
-	CreateUser(user *domain.UserEntity) (uuid.UUID, error)
-	UpdateUser(user *domain.UserEntity, data map[string]any) (*domain.UserEntity, error)
+	GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error)
+	GetByID(id uuid.UUID) (*domain.UserEntity, error)
+	GetByEmail(email string) (*domain.UserEntity, error)
+	Create(user *domain.UserEntity) (uuid.UUID, error)
+	Update(user *domain.UserEntity, data map[string]any) (*domain.UserEntity, error)
 }

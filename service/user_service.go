@@ -19,7 +19,7 @@ func NewUserService(repo repository.UserRepository) *UserService {
 }
 
 func (s *UserService) GetUsers(filter *domain.UserFilter) (*domain.Paginated[domain.User], error) {
-	entities, total, err := s.repo.GetUsers(filter)
+	entities, total, err := s.repo.GetList(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (s *UserService) GetUsers(filter *domain.UserFilter) (*domain.Paginated[dom
 }
 
 func (s *UserService) GetUserByID(id uuid.UUID) (*domain.User, error) {
-	user, err := s.repo.GetUserByID(id)
+	user, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (s *UserService) GetUserByID(id uuid.UUID) (*domain.User, error) {
 }
 
 func (s *UserService) GetUserByEmail(email string) (*domain.User, error) {
-	user, err := s.repo.GetUserByEmail(email)
+	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *UserService) CreateUser(name, email, password string, roles []string, p
 		UpdatedAt:    time.Now(),
 		UpdatedBy:    pic,
 	}
-	id, err := s.repo.CreateUser(user)
+	id, err := s.repo.Create(user)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -92,7 +92,7 @@ func (s *UserService) UpdateUser(id uuid.UUID, name *string, email *string, role
 		data["roles"] = strings.Join(roles, ",")
 	}
 
-	user, err := s.repo.UpdateUser(user, data)
+	user, err := s.repo.Update(user, data)
 	if err != nil {
 		return nil, err
 	}
@@ -113,13 +113,13 @@ func (s *UserService) UpdateUserPassword(id uuid.UUID, newPassword string, pic s
 	data := map[string]any{
 		"password_hash": user.PasswordHash,
 	}
-	_, err = s.repo.UpdateUser(user, data)
+	_, err = s.repo.Update(user, data)
 	return err
 }
 
 func (s *UserService) DeleteUser(id uuid.UUID, pic string) error {
 	now := time.Now()
-	_, err := s.repo.UpdateUser(&domain.UserEntity{
+	_, err := s.repo.Update(&domain.UserEntity{
 		ID:        id,
 		DeletedAt: &now,
 	}, map[string]any{

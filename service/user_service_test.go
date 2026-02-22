@@ -91,7 +91,7 @@ func (s *UserServiceTestSuite) TestCreateUser() {
 	defer RemoveUserById(s.db, id)
 
 	// Verify user was created in the database
-	user, err := s.repo.GetUserByID(id)
+	user, err := s.repo.GetByID(id)
 	s.Require().NoError(err)
 	s.Require().NotNil(user)
 	s.Equal(r.Name, user.Name)
@@ -136,7 +136,7 @@ func (s *UserServiceTestSuite) TestUpdateUser() {
 	s.Require().NoError(err)
 
 	// Verify user was updated in the database
-	user, err := s.repo.GetUserByID(id)
+	user, err := s.repo.GetByID(id)
 	s.Require().NoError(err)
 	s.Require().NotNil(user)
 	s.Equal(updatedName, user.Name)
@@ -151,7 +151,7 @@ func (s *UserServiceTestSuite) TestUpdateUser() {
 	s.Require().NoError(err)
 
 	// Verify user roles were updated in the database
-	user, err = s.repo.GetUserByID(id)
+	user, err = s.repo.GetByID(id)
 	s.Require().NoError(err)
 	s.Require().NotNil(user)
 	s.Equal(strings.Join(updatedRoles, ","), user.Roles)
@@ -173,7 +173,7 @@ func (s *UserServiceTestSuite) TestDeleteUser() {
 	s.Require().NoError(err)
 
 	// Verify user was deleted from the database
-	user, err := s.repo.GetUserByID(id)
+	user, err := s.repo.GetByID(id)
 	s.Require().NoError(err)
 	s.Require().NotNil(user)
 	s.Require().NotNil(user.DeletedAt)

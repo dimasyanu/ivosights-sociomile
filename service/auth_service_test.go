@@ -61,7 +61,7 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 	if err != nil {
 		s.T().Fatalf("Failed to hash password: %v", err)
 	}
-	_, err = userRepo.CreateUser(&domain.UserEntity{
+	_, err = userRepo.Create(&domain.UserEntity{
 		Name:         "Test User",
 		Email:        "test_login@mail.com",
 		PasswordHash: hashedPassword,

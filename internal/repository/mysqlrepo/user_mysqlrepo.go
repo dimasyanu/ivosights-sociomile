@@ -54,7 +54,7 @@ func MapRowToUserEntity(row *sql.Row) (*domain.UserEntity, error) {
 	return &user, nil
 }
 
-func (r *userMysqlRepository) GetUsers(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error) {
+func (r *userMysqlRepository) GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error) {
 
 	// Get total count for pagination
 	var count int64
@@ -101,19 +101,19 @@ func (r *userMysqlRepository) GetUsers(filter *domain.UserFilter) (*domain.Pagin
 	return paginated, count, nil
 }
 
-func (r *userMysqlRepository) GetUserByID(id uuid.UUID) (*domain.UserEntity, error) {
+func (r *userMysqlRepository) GetByID(id uuid.UUID) (*domain.UserEntity, error) {
 	query := "SELECT " + strings.Join(cols, ", ") + " FROM users WHERE id = UUID_TO_BIN(?)"
 	row := r.db.QueryRowContext(context.Background(), query, id.String())
 	return MapRowToUserEntity(row)
 }
 
-func (r *userMysqlRepository) GetUserByEmail(email string) (*domain.UserEntity, error) {
+func (r *userMysqlRepository) GetByEmail(email string) (*domain.UserEntity, error) {
 	query := "SELECT " + strings.Join(cols, ", ") + " FROM users WHERE email = ?"
 	row := r.db.QueryRowContext(context.Background(), query, email)
 	return MapRowToUserEntity(row)
 }
 
-func (r *userMysqlRepository) CreateUser(user *domain.UserEntity) (uuid.UUID, error) {
+func (r *userMysqlRepository) Create(user *domain.UserEntity) (uuid.UUID, error) {
 	id := uuid.New()
 	pairs := map[string]any{
 		"id":            id,
@@ -138,7 +138,7 @@ func (r *userMysqlRepository) CreateUser(user *domain.UserEntity) (uuid.UUID, er
 	return id, nil
 }
 
-func (r *userMysqlRepository) UpdateUser(user *domain.UserEntity, data map[string]any) (*domain.UserEntity, error) {
+func (r *userMysqlRepository) Update(user *domain.UserEntity, data map[string]any) (*domain.UserEntity, error) {
 	var name, email, roles string
 	query := "SELECT name, email, roles FROM users WHERE id = UUID_TO_BIN(?)"
 	row := r.db.QueryRowContext(context.Background(), query, user.ID.String())
@@ -181,7 +181,7 @@ func (r *userMysqlRepository) UpdateUser(user *domain.UserEntity, data map[strin
 	return user, nil
 }
 
-func (r *userMysqlRepository) DeleteUser(id uuid.UUID) error {
+func (r *userMysqlRepository) Delete(id uuid.UUID) error {
 	query := "DELETE FROM users WHERE id = UUID_TO_BIN(?)"
 	_, err := r.db.ExecContext(context.Background(), query, id.String())
 	if err != nil {
