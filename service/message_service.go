@@ -16,7 +16,7 @@ type MessageService struct {
 	repo    repository.MessageRepository
 }
 
-func NewMessageService(convSvc *ConversationService, repo repository.MessageRepository, mq infra.QueueEngine) *MessageService {
+func NewMessageService(convSvc *ConversationService, repo repository.MessageRepository, mq infra.QueueClient) *MessageService {
 	return &MessageService{
 		convSvc: convSvc,
 		repo:    repo,

@@ -1,6 +1,7 @@
 package infra
 
-type QueueEngine interface {
+type QueueClient interface {
 	PublishMessage(topic string, message []byte) error
+	GetPublishedMessages() [][]byte
 	Close() error
 }

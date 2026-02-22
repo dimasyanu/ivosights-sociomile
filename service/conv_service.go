@@ -9,10 +9,10 @@ import (
 
 type ConversationService struct {
 	convRepo repository.ConversationRepository
-	mq       infra.QueueEngine
+	mq       infra.QueueClient
 }
 
-func NewConversationService(convRepo repository.ConversationRepository, mq infra.QueueEngine) *ConversationService {
+func NewConversationService(convRepo repository.ConversationRepository, mq infra.QueueClient) *ConversationService {
 	return &ConversationService{convRepo: convRepo, mq: mq}
 }
 

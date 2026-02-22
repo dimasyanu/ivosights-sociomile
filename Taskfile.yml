@@ -21,6 +21,11 @@ tasks:
       - mkdir -p ./_run/mysql
       - docker-compose up -d --wait
       - task: migrate
+  
+  start-rabbitmq:
+    cmds:
+      - mkdir -p ./_run/rabbitmq
+      - docker-compose up -d rabbitmq --wait
 
   test:
     cmds:
