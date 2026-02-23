@@ -53,7 +53,7 @@ func (s *RabbitMqTestSuite) TestPublishMessage() {
 	s.NotNil(client)
 	defer client.Close()
 
-	err = client.PublishMessage(ConversationQueue, []byte(`{"message": "Hello, RabbitMQ!"}`))
+	err = client.Publish(ConversationQueue, []byte(`{"message": "Hello, RabbitMQ!"}`))
 	s.NoError(err)
 
 	published := client.GetPublishedMessages()

@@ -16,6 +16,12 @@ tasks:
       - docker exec -it sociomile-mysql /bin/bash -c "sed 's/<database_name>/{{.MYSQL_DATABASE}}/g' /usr/share/queries/init.sql | mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}}"
       - goose up
 
+  start:
+    cmds:
+      - ls .env
+      - goose -version
+      - task: start-containers
+
   start-containers:
     cmds:
       - mkdir -p ./_run/mysql
@@ -41,6 +47,11 @@ tasks:
       - task: os:remove-rundir
         vars:
           TARGET: "./_run"
+  
+  reset-db:
+    cmds:
+      - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
+      - goose up
 
   reinit:
     cmds:
@@ -49,7 +60,4 @@ tasks:
   
   default: 
     cmds:
-      - ls .env
-      - goose -version
-      - task: start-containers
-      # - task: run-tests
+      - task: start

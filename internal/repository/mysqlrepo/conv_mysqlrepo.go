@@ -15,9 +15,8 @@ type ConversationMySqlRepository struct {
 
 // Create implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid.UUID, error) {
-	id := uuid.New()
 	pairs := map[string]any{
-		"id":          id,
+		"id":          c.ID,
 		"tenant_id":   c.TenantID,
 		"customer_id": c.CustomerID,
 		"status":      c.Status,
@@ -31,7 +30,7 @@ func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid
 		return uuid.Nil, err
 	}
 
-	return id, nil
+	return c.ID, nil
 }
 
 // GetByID implements [repository.ConversationRepository].

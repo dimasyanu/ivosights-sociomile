@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"encoding/json"
 	"testing"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
@@ -96,7 +97,8 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 	customerID := uuid.New()
 
 	// Attempt to create a message without an existing conversation
-	_, err = s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, "Hello, I need help with my order.")
+	msg := "Hello, I need help with my order."
+	message, err := s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
 	s.NoError(err)
 
 	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
@@ -105,5 +107,14 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 
 	published := client.GetPublishedMessages()
 	s.Len(published, 1)
-	s.Equal(`{"message": "Hello, RabbitMQ!"}`, string(published[0]))
+
+	expect := &infra.ConversationCreatedMessage{
+		TenantID: tenant.ID,
+		CustID:   customerID.String(),
+		ConvID:   message.ConversationID.String(),
+		Message:  msg,
+	}
+	expectBytes, err := json.Marshal(expect)
+	s.NoError(err)
+	s.Equal(string(expectBytes), string(published[0]))
 }

@@ -109,7 +109,7 @@ func NewRabbitMQClient(config *RabbitMQConfig) (QueueClient, error) {
 	return &RabbitMQClient{config: config, conn: conn}, nil
 }
 
-func (c *RabbitMQClient) PublishMessage(queue string, message []byte) error {
+func (c *RabbitMQClient) Publish(queue string, message []byte) error {
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
@@ -129,6 +129,37 @@ func (c *RabbitMQClient) PublishMessage(queue string, message []byte) error {
 		},
 	)
 	return err
+}
+
+func (c *RabbitMQClient) Consume(queue string) (<-chan []byte, error) {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	msgs, err := ch.Consume(
+		queue,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	messageChan := make(chan []byte)
+	go func() {
+		defer ch.Close()
+		for msg := range msgs {
+			messageChan <- msg.Body
+		}
+		close(messageChan)
+	}()
+
+	return messageChan, nil
 }
 
 func (c *RabbitMQClient) GetPublishedMessages() [][]byte {
