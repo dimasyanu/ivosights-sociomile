@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	repository "github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/google/uuid"
 )
 

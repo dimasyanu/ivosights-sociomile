@@ -1,7 +1,7 @@
-package repository
+package repo
 
 import (
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/google/uuid"
 )
 

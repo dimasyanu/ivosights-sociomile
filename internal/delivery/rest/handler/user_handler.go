@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
-	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )

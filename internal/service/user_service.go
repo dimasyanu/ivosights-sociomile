@@ -4,17 +4,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/google/uuid"
 )
 
 type UserService struct {
-	repo repository.UserRepository
+	repo repo.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository) *UserService {
+func NewUserService(repo repo.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
@@ -62,7 +62,7 @@ func (s *UserService) GetUserByEmail(email string) (*domain.User, error) {
 }
 
 func (s *UserService) CreateUser(name, email, password string, roles []string, pic string) (uuid.UUID, error) {
-	passwordHash, err := util.HashPassword(password)
+	passwordHash, err := utils.HashPassword(password)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -108,7 +108,7 @@ func (s *UserService) UpdateUser(id uuid.UUID, name *string, email *string, role
 }
 
 func (s *UserService) UpdateUserPassword(id uuid.UUID, newPassword string, pic string) error {
-	passwordHash, err := util.HashPassword(newPassword)
+	passwordHash, err := utils.HashPassword(newPassword)
 	if err != nil {
 		return err
 	}

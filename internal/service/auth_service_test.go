@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/suite"
 )
@@ -33,7 +33,7 @@ func TestAuthTestSuite(t *testing.T) {
 // Setup code before each test
 func (s *AuthServiceTestSuite) SetupSuite() {
 	const dbName = "test_login"
-	const envPath = "../.env"
+	const envPath = "../../.env"
 
 	// Load configuration
 	s.mysqlCfg = config.NewMysqlConfig(envPath)
@@ -41,7 +41,7 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 
 	// Create test database
 	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
-	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.CrateMysqlDatabase(envPath, s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
@@ -57,7 +57,7 @@ func (s *AuthServiceTestSuite) SetupSuite() {
 
 	// Create a test user in the database
 	password := "password!123"
-	hashedPassword, err := util.HashPassword(password)
+	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		s.T().Fatalf("Failed to hash password: %v", err)
 	}
@@ -82,7 +82,7 @@ func (s *AuthServiceTestSuite) TearDownSuite() {
 	s.db.Close() // Close the database connection after all tests
 
 	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
-	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 }

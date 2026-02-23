@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
-	"github.com/dimasyanu/ivosights-sociomile/constant"
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/constant"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,7 +22,7 @@ type MessageServiceTestSuite struct {
 	tenantSvc   *TenantService
 	rabbitMqCfg *config.RabbitMQConfig
 	mysqlCfg    *config.MysqlConfig
-	convRepo    repository.ConversationRepository
+	convRepo    repo.ConversationRepository
 	db          *sql.DB
 	mq          infra.QueueClient
 
@@ -35,7 +35,7 @@ func TestMessageServiceTestSuite(t *testing.T) {
 
 func (s *MessageServiceTestSuite) SetupSuite() {
 	const dbName = "test_messages"
-	const envPath = "../.env"
+	const envPath = "../../.env"
 
 	// Load configuration
 	rabbitMqCfg := config.NewRabbitMQConfig(envPath)
@@ -45,7 +45,7 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 
 	// Create test database
 	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
-	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.CrateMysqlDatabase(envPath, s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
@@ -79,7 +79,7 @@ func (s *MessageServiceTestSuite) TearDownSuite() {
 	s.db.Close()
 	s.mq.Close()
 	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
-	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 }

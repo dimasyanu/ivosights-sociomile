@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/constant"
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/constant"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
 	"github.com/google/uuid"
 )
 
 type ConversationService struct {
-	repo repository.ConversationRepository
+	repo repo.ConversationRepository
 	mq   infra.QueueClient
 }
 
-func NewConversationService(convRepo repository.ConversationRepository, mq infra.QueueClient) *ConversationService {
+func NewConversationService(convRepo repo.ConversationRepository, mq infra.QueueClient) *ConversationService {
 	return &ConversationService{repo: convRepo, mq: mq}
 }
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	repository "github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
 	"github.com/google/uuid"
 )
 

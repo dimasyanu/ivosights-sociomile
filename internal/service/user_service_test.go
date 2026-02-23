@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
-	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,7 +21,7 @@ type UserServiceTestSuite struct {
 
 	mysqlCfg *config.MysqlConfig
 	db       *sql.DB
-	repo     repository.UserRepository
+	repo     repo.UserRepository
 	svc      *UserService
 
 	suite.Suite
@@ -35,7 +35,7 @@ func TestUserServiceTestSuite(t *testing.T) {
 // Setup code before each test
 func (s *UserServiceTestSuite) SetupSuite() {
 	const dbName = "test_users"
-	const envPath = "../.env"
+	const envPath = "../../.env"
 
 	// Load configuration
 	s.mysqlCfg = config.NewMysqlConfig(envPath)
@@ -43,7 +43,7 @@ func (s *UserServiceTestSuite) SetupSuite() {
 
 	// Create test database
 	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
-	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.CrateMysqlDatabase(envPath, s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
@@ -63,7 +63,7 @@ func (s *UserServiceTestSuite) TearDownSuite() {
 	s.db.Close() // Close the database connection after all tests
 
 	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
-	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 }
@@ -96,7 +96,7 @@ func (s *UserServiceTestSuite) TestCreateUser() {
 	s.Require().NotNil(user)
 	s.Equal(r.Name, user.Name)
 	s.Equal(r.Email, user.Email)
-	s.Require().NoError(util.CheckPasswordHash(r.Password, user.PasswordHash))
+	s.Require().NoError(utils.CheckPasswordHash(r.Password, user.PasswordHash))
 	s.Equal(adminEmail, user.CreatedBy)
 	s.Equal(adminEmail, user.UpdatedBy)
 	s.Equal(strings.Join(r.Roles, ","), user.Roles)

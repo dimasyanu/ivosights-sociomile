@@ -1,6 +1,6 @@
-package repository
+package repo
 
-import "github.com/dimasyanu/ivosights-sociomile/domain"
+import "github.com/dimasyanu/ivosights-sociomile/internal/domain"
 
 type TenantRepository interface {
 	GetByID(tenantID uint) (*domain.TenantEntity, error)

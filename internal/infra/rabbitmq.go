@@ -167,6 +167,7 @@ func (c *RabbitMQClient) PeekPublishedMessages() [][]byte {
 
 	fmt.Printf("Message: %s\n", string(msg.Body))
 
+	// Reject the message to put it back in the queue
 	defer func() {
 		err = msg.Reject(true)
 		if err != nil {

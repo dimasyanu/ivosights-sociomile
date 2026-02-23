@@ -7,8 +7,8 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/handler"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 	"github.com/gofiber/fiber/v3"
 )
 

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
-	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 	"github.com/gofiber/fiber/v3"
 )
 

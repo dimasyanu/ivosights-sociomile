@@ -3,9 +3,10 @@ package mysqlrepo
 import (
 	"context"
 	"database/sql"
+	"log"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	repository "github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/google/uuid"
 )
 
@@ -46,7 +47,7 @@ func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid
 // GetByID implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.ConversationEntity, error) {
 	conversation := &domain.ConversationEntity{}
-	query := "SELECT id, tenant_id, customer_id, status FROM conversation WHERE id = UUID_TO_BIN(?)"
+	query := "SELECT id, tenant_id, customer_id, status FROM conversations WHERE id = UUID_TO_BIN(?)"
 	err := r.db.QueryRow(query, id).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -60,7 +61,7 @@ func (r *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.Conversatio
 // GetByTenantAndCustomer implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error) {
 	var conversation domain.ConversationEntity
-	err := r.db.QueryRow("SELECT id, tenant_id, customer_id, status FROM conversations WHERE tenant_id = ? AND customer_id = UUID_TO_BIN(?)", tenantID, customerID.String()).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
+	err := r.db.QueryRow("SELECT id, tenant_id, customer_id, assigned_agent_id, status FROM conversations WHERE tenant_id = ? AND customer_id = UUID_TO_BIN(?)", tenantID, customerID.String()).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.AssignedAgentID, &conversation.Status)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrNotFound
@@ -81,5 +82,6 @@ func (r *ConversationMySqlRepository) UpdateStatus(id uuid.UUID, status string) 
 func (r *ConversationMySqlRepository) UpdateAssignment(conv *domain.ConversationEntity, agentID uuid.UUID) error {
 	query := "UPDATE conversations SET assigned_agent_id = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)"
 	_, err := r.db.ExecContext(context.Background(), query, agentID, conv.ID)
+	log.Printf("AgentID: %s\n", agentID.String())
 	return err
 }

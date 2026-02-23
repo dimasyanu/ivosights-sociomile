@@ -8,8 +8,8 @@ import (
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 )
 
 type QueueListener struct {

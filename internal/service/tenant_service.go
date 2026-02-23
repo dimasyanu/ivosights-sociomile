@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	repository "github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 )
 
 type TenantService struct {

@@ -11,15 +11,15 @@ import (
 
 	"github.com/dimasyanu/ivosights-sociomile/cmd/listener"
 	"github.com/dimasyanu/ivosights-sociomile/config"
-	"github.com/dimasyanu/ivosights-sociomile/constant"
-	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/constant"
+	repository "github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
-	"github.com/dimasyanu/ivosights-sociomile/service"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/service"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -58,7 +58,7 @@ func (s *MessageHandlerTestSuite) SetupSuite() {
 
 	// Create test database
 	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
-	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.CrateMysqlDatabase(envPath, s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
@@ -88,7 +88,7 @@ func (s *MessageHandlerTestSuite) SetupSuite() {
 func (s *MessageHandlerTestSuite) TearDownSuite() {
 	// Drop test database
 	s.T().Logf("Dropping database '%s'\n", s.mysqlCfg.Database)
-	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	if err := utils.DropMysqlDatabase(s.mysqlCfg); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 
@@ -136,7 +136,7 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	s.Require().NoError(err)
 
 	// Set up an available agent
-	pass, _ := util.HashPassword("password123")
+	pass, _ := utils.HashPassword("password123")
 	agent := &domain.UserEntity{
 		Name:         "Smith",
 		Email:        "smith.agent@example.com",
@@ -190,11 +190,11 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	// // Wait for the worker to process the message
 	// wg.Wait()
 
-	time.Sleep(time.Millisecond * 500) // Wait for the worker to process the message
+	time.Sleep(time.Millisecond * 50) // Wait for the worker to process the message
 
 	// Verify that the the conversation is now assigned to an agent
 	conv, err = s.convRepo.GetByTenantAndCustomer(tenant.ID, payload.CustomerID)
-	s.Require().NoError(err)
+	s.NoError(err)
 	s.NotNil(conv.AssignedAgentID)
 	s.Equal(agent.ID, *conv.AssignedAgentID)
 }

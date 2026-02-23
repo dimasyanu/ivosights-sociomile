@@ -1,4 +1,4 @@
-package util
+package utils
 
 import (
 	"crypto/rand"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CrateMysqlDatabase(c *config.MysqlConfig) error {
+func CrateMysqlDatabase(envPath string, c *config.MysqlConfig) error {
 	// Connect to MySQL server
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/?charset=utf8mb4&parseTime=True&loc=Local", c.User, c.Password, c.Host, c.Port)
 	db1, err := sql.Open("mysql", dsn)
@@ -44,7 +44,8 @@ func CrateMysqlDatabase(c *config.MysqlConfig) error {
 	if err := goose.SetDialect("mysql"); err != nil {
 		log.Fatalf("An error occured: %v", err)
 	}
-	if err := goose.Up(db2, "../sql/migrations"); err != nil {
+	rootDir := envPath[:len(envPath)-len(".env")]
+	if err := goose.Up(db2, rootDir+"/sql/migrations"); err != nil {
 		log.Fatalf("An error occured: %v", err)
 	}
 

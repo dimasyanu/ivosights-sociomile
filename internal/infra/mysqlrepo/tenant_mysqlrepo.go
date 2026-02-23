@@ -3,7 +3,7 @@ package mysqlrepo
 import (
 	"database/sql"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 )
 
 type TenantMysqlRepository struct {

@@ -6,19 +6,19 @@ import (
 	"log"
 	"time"
 
-	"github.com/dimasyanu/ivosights-sociomile/domain"
-	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
-	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/gofiber/fiber/v3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	userRepo   repository.UserRepository
+	userRepo   repo.UserRepository
 	JwtService *JwtService
 }
 
-func NewAuthService(userRepo repository.UserRepository, jwtService *JwtService) *AuthService {
+func NewAuthService(userRepo repo.UserRepository, jwtService *JwtService) *AuthService {
 	return &AuthService{
 		userRepo:   userRepo,
 		JwtService: jwtService,
@@ -37,7 +37,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 
 	// Verify password
-	if err = util.CheckPasswordHash(password, user.PasswordHash); err != nil {
+	if err = utils.CheckPasswordHash(password, user.PasswordHash); err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
 		}
@@ -65,7 +65,7 @@ func (s *AuthService) Register(name, email, password string) error {
 		return fiber.ErrInternalServerError
 	}
 
-	passwordHash, err := util.HashPassword(password)
+	passwordHash, err := utils.HashPassword(password)
 	if err != nil {
 		log.Println(err.Error())
 		return fiber.ErrInternalServerError
