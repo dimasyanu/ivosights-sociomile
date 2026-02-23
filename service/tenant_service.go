@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
 )
@@ -13,8 +15,8 @@ func NewTenantService(repo repository.TenantRepository) *TenantService {
 	return &TenantService{repo: repo}
 }
 
-func (s *TenantService) GetTenantByID(tenantID string) (*domain.Tenant, error) {
-	tenantEntity, err := s.repo.GetTenantByID(tenantID)
+func (s *TenantService) GetTenantByID(id uint) (*domain.Tenant, error) {
+	tenantEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -27,23 +29,46 @@ func (s *TenantService) GetTenantByID(tenantID string) (*domain.Tenant, error) {
 	}, nil
 }
 
-func (s *TenantService) CreateTenant(name string) (*domain.Tenant, error) {
+func (s *TenantService) Create(name string) (*domain.Tenant, error) {
 	data := &domain.TenantEntity{
 		Name: name,
 	}
-	entity, err := s.repo.CreateTenant(data)
+	entity, err := s.repo.Create(data)
 	if err != nil {
 		return nil, err
 	}
 	return entity.ToDto(), nil
 }
 
-func (s *TenantService) UpdateTenant(tenantID string, name string) (*domain.Tenant, error) {
-	// Implementation for updating a tenant would go here
-	return nil, nil
+func (s *TenantService) Update(id uint, name string) (*domain.Tenant, error) {
+	tenantEntity, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantEntity.Name = name
+
+	updatedEntity, err := s.repo.Update(id, tenantEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedEntity.ToDto(), nil
 }
 
-func (s *TenantService) DeleteTenant(tenantID string) error {
-	// Implementation for deleting a tenant would go here
+func (s *TenantService) Delete(id uint) error {
+	tenantEntity, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	tenantEntity.DeletedAt = &now
+
+	_, err = s.repo.Update(id, tenantEntity)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -3,56 +3,20 @@ package infra
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	"github.com/dimasyanu/ivosights-sociomile/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var ConversationQueue = "conversation_queue"
 
-type RabbitMQConfig struct {
-	URL         string
-	Exchange    string
-	Queue       string
-	RoutingKey  string
-	ContentType string
-	Username    string
-	Password    string
-}
-
-func NewRabbitMQConfig(path ...string) *RabbitMQConfig {
-	var envPath string
-	if len(path) > 0 {
-		envPath = path[0]
-	} else {
-		envPath = ".env"
-	}
-
-	if len(envPath) > 0 {
-		if err := godotenv.Load(envPath); err != nil {
-			panic("Error loading configuration: " + err.Error())
-		}
-	}
-	c := &RabbitMQConfig{
-		URL:         os.Getenv("RABBITMQ_URL"),
-		Exchange:    os.Getenv("RABBITMQ_EXCHANGE"),
-		Queue:       os.Getenv("RABBITMQ_QUEUE"),
-		RoutingKey:  os.Getenv("RABBITMQ_ROUTING_KEY"),
-		Username:    os.Getenv("RABBITMQ_DEFAULT_USER"),
-		Password:    os.Getenv("RABBITMQ_DEFAULT_PASS"),
-		ContentType: "application/json",
-	}
-	return c
-}
-
 type RabbitMQClient struct {
-	config *RabbitMQConfig
+	config *config.RabbitMQConfig
 	conn   *amqp.Connection
 }
 
-func NewRabbitMQClient(config *RabbitMQConfig) (QueueClient, error) {
+func NewRabbitMQClient(config *config.RabbitMQConfig) (QueueClient, error) {
 	// Establish connection to RabbitMQ server
 	url := fmt.Sprintf(config.URL, config.Username, config.Password)
 	conn, err := amqp.Dial(url)
@@ -163,6 +127,28 @@ func (c *RabbitMQClient) Consume(queue string) (<-chan []byte, error) {
 }
 
 func (c *RabbitMQClient) GetPublishedMessages() [][]byte {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		return nil
+	}
+	defer ch.Close()
+
+	msg, ok, err := ch.Get(c.config.Queue, true)
+	if err != nil {
+		fmt.Printf("Error getting message: %v\n", err)
+		return nil
+	}
+	if !ok {
+		fmt.Printf("No message available\n")
+		return nil
+	}
+
+	fmt.Printf("Message: %s\n", string(msg.Body))
+
+	return [][]byte{msg.Body}
+}
+
+func (c *RabbitMQClient) PeekPublishedMessages() [][]byte {
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return nil

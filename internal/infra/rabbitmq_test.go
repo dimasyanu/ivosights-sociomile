@@ -3,13 +3,14 @@ package infra
 import (
 	"testing"
 
+	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/stretchr/testify/suite"
 )
 
 var envPath = "../../.env"
 
 type RabbitMqTestSuite struct {
-	config *RabbitMQConfig
+	config *config.RabbitMQConfig
 	client QueueClient
 
 	suite.Suite
@@ -20,7 +21,7 @@ func TestRabbitMQTestSuite(t *testing.T) {
 }
 
 func (s *RabbitMqTestSuite) SetupSuite() {
-	s.config = NewRabbitMQConfig(envPath)
+	s.config = config.NewRabbitMQConfig(envPath)
 
 	var err error
 	s.client, err = NewRabbitMQClient(s.config)

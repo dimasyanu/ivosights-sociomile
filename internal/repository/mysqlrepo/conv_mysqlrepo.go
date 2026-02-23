@@ -35,13 +35,21 @@ func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid
 
 // GetByID implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.ConversationEntity, error) {
-	panic("unimplemented")
+	var conversation domain.ConversationEntity
+	query := "SELECT id, tenant_id, customer_id, status FROM conversation WHERE id = UUID_TO_BIN(?)"
+	err := r.db.QueryRow(query, id).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrNotFound
+		}
+	}
+	return &conversation, nil
 }
 
 // GetByTenantAndCustomer implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error) {
 	var conversation domain.ConversationEntity
-	err := r.db.QueryRow("SELECT id, tenant_id, customer_id, status FROM conversations WHERE tenant_id = ? AND customer_id = ?", tenantID, customerID).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
+	err := r.db.QueryRow("SELECT id, tenant_id, customer_id, status FROM conversations WHERE tenant_id = ? AND customer_id = UUID_TO_BIN(?)", tenantID, customerID.String()).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrNotFound

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dimasyanu/ivosights-sociomile/constant"
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
@@ -41,7 +42,7 @@ func (s *ConversationService) Create(tID uint, custID uuid.UUID) (*domain.Conver
 		ID:         uuid.New(),
 		TenantID:   tID,
 		CustomerID: custID,
-		Status:     "open",
+		Status:     constant.ConvStatusOpen,
 		CreatedAt:  time.Now(),
 	}
 	_, err := s.convRepo.Create(convEntity)

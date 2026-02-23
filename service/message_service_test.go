@@ -4,10 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/constant"
+	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
+	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
 	"github.com/dimasyanu/ivosights-sociomile/util"
 	"github.com/google/uuid"
@@ -17,8 +20,9 @@ import (
 type MessageServiceTestSuite struct {
 	svc         *MessageService
 	tenantSvc   *TenantService
-	rabbitMqCfg *infra.RabbitMQConfig
+	rabbitMqCfg *config.RabbitMQConfig
 	mysqlCfg    *config.MysqlConfig
+	convRepo    repository.ConversationRepository
 	db          *sql.DB
 	mq          infra.QueueClient
 
@@ -34,9 +38,9 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	const envPath = "../.env"
 
 	// Load configuration
-	rabbitMqCfg := infra.NewRabbitMQConfig(envPath)
+	rabbitMqCfg := config.NewRabbitMQConfig(envPath)
 	s.mysqlCfg = config.NewMysqlConfig(envPath)
-	s.rabbitMqCfg = infra.NewRabbitMQConfig(envPath)
+	s.rabbitMqCfg = config.NewRabbitMQConfig(envPath)
 	s.mysqlCfg.Database = dbName
 
 	// Create test database
@@ -55,6 +59,7 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 
 	// Initialize repositories
 	convRepo := mysqlrepo.NewConversationRepository(s.db)
+	s.convRepo = convRepo
 	msgRepo := mysqlrepo.NewMessageRepository(s.db)
 	tntRepo := mysqlrepo.NewTenantRepository(s.db)
 
@@ -85,11 +90,42 @@ func (s *MessageServiceTestSuite) TestGetMessages() {
 }
 
 func (s *MessageServiceTestSuite) TestCreateMessage() {
+	// Create a new tenant
+	tenant, err := s.tenantSvc.Create("Test Tenant")
+	s.NoError(err)
+	s.NotNil(tenant)
+
+	// Random customer ID for testing
+	customerID := uuid.New()
+
+	// Set up a conversation
+	conversation, err := s.convRepo.Create(&domain.ConversationEntity{
+		ID:         uuid.New(),
+		TenantID:   tenant.ID,
+		CustomerID: customerID,
+		Status:     constant.ConvStatusOpen,
+		CreatedAt:  time.Now(),
+	})
+	s.NoError(err)
+	s.NotNil(conversation)
+
+	// Attempt to create a message without an existing conversation
+	msg := "Hello, I need help with my order."
+	_, err = s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
+	s.NoError(err)
+
+	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
+	s.NoError(err)
+	s.NotNil(client)
+
+	// Verify that no message was published to the queue
+	published := client.GetPublishedMessages()
+	s.Len(published, 0)
 }
 
 func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQueue() {
 	// Create a new tenant
-	tenant, err := s.tenantSvc.CreateTenant("Test Tenant")
+	tenant, err := s.tenantSvc.Create("Test Tenant")
 	s.NoError(err)
 	s.NotNil(tenant)
 
@@ -105,6 +141,7 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 	s.NoError(err)
 	s.NotNil(client)
 
+	// Verify that a message was published to the queue
 	published := client.GetPublishedMessages()
 	s.Len(published, 1)
 
