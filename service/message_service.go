@@ -87,8 +87,8 @@ func (s *MessageService) createNewConversation(tID uint, custID uuid.UUID, msg s
 	go func() {
 		data := &infra.ConversationCreatedMessage{
 			TenantID: tID,
-			CustID:   custID.String(),
-			ConvID:   conv.ID.String(),
+			CustID:   custID,
+			ConvID:   conv.ID,
 			Message:  msg,
 		}
 		bytes, err := json.Marshal(data)

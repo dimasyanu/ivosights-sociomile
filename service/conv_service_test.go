@@ -69,6 +69,11 @@ func (s *ConversationServiceTestSuite) SetupSuite() {
 func (s *ConversationServiceTestSuite) TearDownSuite() {
 	s.mq.Close()
 	s.db.Close()
+
+	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
+	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+		s.T().Fatalf("Failed to drop MySQL database: %v", err)
+	}
 }
 
 func (s *ConversationServiceTestSuite) TestGetByID() {
@@ -89,5 +94,7 @@ func (s *ConversationServiceTestSuite) TestGetByID() {
 
 	conv, err := s.svc.GetByID(convID)
 	s.Require().NoError(err)
-	s.Require().Equal(conv.ID, convID)
+	s.Require().Equal(convID, conv.ID)
+	s.NotNil(conv.ID)
+	s.NotEqual(uuid.Nil, conv.ID)
 }

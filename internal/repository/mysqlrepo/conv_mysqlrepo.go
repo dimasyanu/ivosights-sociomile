@@ -13,8 +13,18 @@ type ConversationMySqlRepository struct {
 	db *sql.DB
 }
 
+func NewConversationRepository(db *sql.DB) repository.ConversationRepository {
+	// Initialize your database connection here and assign it to the db field
+	return &ConversationMySqlRepository{
+		db: db, // Replace with actual DB connection
+	}
+}
+
 // Create implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid.UUID, error) {
+	if c.ID == uuid.Nil {
+		c.ID = uuid.New()
+	}
 	pairs := map[string]any{
 		"id":          c.ID,
 		"tenant_id":   c.TenantID,
@@ -35,15 +45,16 @@ func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid
 
 // GetByID implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.ConversationEntity, error) {
-	var conversation domain.ConversationEntity
+	conversation := &domain.ConversationEntity{}
 	query := "SELECT id, tenant_id, customer_id, status FROM conversation WHERE id = UUID_TO_BIN(?)"
 	err := r.db.QueryRow(query, id).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrNotFound
 		}
+		return nil, err
 	}
-	return &conversation, nil
+	return conversation, nil
 }
 
 // GetByTenantAndCustomer implements [repository.ConversationRepository].
@@ -61,12 +72,14 @@ func (r *ConversationMySqlRepository) GetByTenantAndCustomer(tenantID uint, cust
 
 // UpdateStatus implements [repository.ConversationRepository].
 func (r *ConversationMySqlRepository) UpdateStatus(id uuid.UUID, status string) error {
-	panic("unimplemented")
+	query := "UPDATE conversations SET status = ? WHERE id = UUID_TO_BIN(?)"
+	_, err := r.db.ExecContext(context.Background(), query, status, id)
+	return err
 }
 
-func NewConversationRepository(db *sql.DB) repository.ConversationRepository {
-	// Initialize your database connection here and assign it to the db field
-	return &ConversationMySqlRepository{
-		db: db, // Replace with actual DB connection
-	}
+// UpdateAssignment implements [repository.ConversationRepository].
+func (r *ConversationMySqlRepository) UpdateAssignment(conv *domain.ConversationEntity, agentID uuid.UUID) error {
+	query := "UPDATE conversations SET assigned_agent_id = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)"
+	_, err := r.db.ExecContext(context.Background(), query, agentID, conv.ID)
+	return err
 }

@@ -7,10 +7,12 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/cmd/listener"
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/constant"
+	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
@@ -28,7 +30,7 @@ type MessageHandlerTestSuite struct {
 	rabbitMqCfg *config.RabbitMQConfig
 
 	db       *sql.DB
-	repo     repository.UserRepository
+	userRepo repository.UserRepository
 	convRepo repository.ConversationRepository
 
 	svc       *service.UserService
@@ -68,11 +70,11 @@ func (s *MessageHandlerTestSuite) SetupSuite() {
 	}
 	s.T().Logf("Successfully connected to MySQL.")
 
-	s.repo = mysqlrepo.NewUserRepository(s.db)
+	s.userRepo = mysqlrepo.NewUserRepository(s.db)
 	s.convRepo = mysqlrepo.NewConversationRepository(s.db)
 	tenantRepo := mysqlrepo.NewTenantRepository(s.db)
 
-	s.svc = service.NewUserService(s.repo)
+	s.svc = service.NewUserService(s.userRepo)
 	s.tenantSvc = service.NewTenantService(tenantRepo)
 
 	s.mq, err = infra.NewRabbitMQClient(s.rabbitMqCfg) // Initialize the queue client
@@ -106,6 +108,9 @@ func (s *MessageHandlerTestSuite) TearDownSuite() {
 }
 
 func (s *MessageHandlerTestSuite) TearDownTest() {
+	// Clear database tables after each test to ensure isolation
+	s.db.Exec("DELETE FROM users")
+
 	// Clear the queue after each test to ensure isolation
 	if err := s.mq.Clear(); err != nil {
 		s.T().Logf("Failed to clear RabbitMQ queue: %v", err)
@@ -129,6 +134,22 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	// Set up tenant
 	tenant, err := s.tenantSvc.Create("Test Tenant")
 	s.Require().NoError(err)
+
+	// Set up an available agent
+	pass, _ := util.HashPassword("password123")
+	agent := &domain.UserEntity{
+		Name:         "Smith",
+		Email:        "smith.agent@example.com",
+		Roles:        "agent",
+		PasswordHash: pass,
+		CreatedAt:    time.Now(),
+		CreatedBy:    "system",
+		UpdatedAt:    time.Now(),
+		UpdatedBy:    "system",
+	}
+	agentID, err := s.userRepo.Create(agent)
+	s.Require().NoError(err)
+	agent.ID = agentID
 
 	// Prepare request payload
 	payload := &models.ChannelPayload{
@@ -169,8 +190,11 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	// // Wait for the worker to process the message
 	// wg.Wait()
 
+	time.Sleep(time.Millisecond * 500) // Wait for the worker to process the message
+
 	// Verify that the the conversation is now assigned to an agent
 	conv, err = s.convRepo.GetByTenantAndCustomer(tenant.ID, payload.CustomerID)
 	s.Require().NoError(err)
 	s.NotNil(conv.AssignedAgentID)
+	s.Equal(agent.ID, *conv.AssignedAgentID)
 }

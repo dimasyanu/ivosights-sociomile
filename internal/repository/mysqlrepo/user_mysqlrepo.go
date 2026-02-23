@@ -101,6 +101,12 @@ func (r *userMysqlRepository) GetList(filter *domain.UserFilter) (*domain.Pagina
 	return paginated, count, nil
 }
 
+func (r *userMysqlRepository) GetAvailableAgent() (*domain.UserEntity, error) {
+	query := "SELECT " + strings.Join(cols, ", ") + " FROM users WHERE FIND_IN_SET('agent', roles) > 0 AND deleted_at IS NULL LIMIT 1"
+	row := r.db.QueryRowContext(context.Background(), query)
+	return MapRowToUserEntity(row)
+}
+
 func (r *userMysqlRepository) GetByID(id uuid.UUID) (*domain.UserEntity, error) {
 	query := "SELECT " + strings.Join(cols, ", ") + " FROM users WHERE id = UUID_TO_BIN(?)"
 	row := r.db.QueryRowContext(context.Background(), query, id.String())

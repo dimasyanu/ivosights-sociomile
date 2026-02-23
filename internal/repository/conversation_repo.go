@@ -10,4 +10,5 @@ type ConversationRepository interface {
 	GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error)
 	Create(conversation *domain.ConversationEntity) (uuid.UUID, error)
 	UpdateStatus(id uuid.UUID, status string) error
+	UpdateAssignment(conv *domain.ConversationEntity, agentID uuid.UUID) error
 }

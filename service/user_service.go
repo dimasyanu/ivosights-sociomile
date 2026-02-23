@@ -45,7 +45,11 @@ func (s *UserService) GetUserByID(id uuid.UUID) (*domain.User, error) {
 }
 
 func (s *UserService) GetAvailableAgent() (*domain.User, error) {
-	users := s.repo.GetList()
+	user, err := s.repo.GetAvailableAgent()
+	if err != nil {
+		return nil, err
+	}
+	return user.ToDto(), nil
 }
 
 func (s *UserService) GetUserByEmail(email string) (*domain.User, error) {

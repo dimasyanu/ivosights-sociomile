@@ -13,17 +13,16 @@ import (
 )
 
 type ConversationService struct {
-	convRepo repository.ConversationRepository
-	userSvc  *UserService
-	mq       infra.QueueClient
+	repo repository.ConversationRepository
+	mq   infra.QueueClient
 }
 
-func NewConversationService(convRepo repository.ConversationRepository, userSvc *UserService, mq infra.QueueClient) *ConversationService {
-	return &ConversationService{convRepo: convRepo, userSvc: userSvc, mq: mq}
+func NewConversationService(convRepo repository.ConversationRepository, mq infra.QueueClient) *ConversationService {
+	return &ConversationService{repo: convRepo, mq: mq}
 }
 
 func (s *ConversationService) GetByID(id uuid.UUID) (*domain.Conversation, error) {
-	convEntity, err := s.convRepo.GetByID(id)
+	convEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +30,7 @@ func (s *ConversationService) GetByID(id uuid.UUID) (*domain.Conversation, error
 }
 
 func (s *ConversationService) GetByTenantAndCustomer(tID uint, custID uuid.UUID) (*domain.Conversation, error) {
-	convEntity, err := s.convRepo.GetByTenantAndCustomer(tID, custID)
+	convEntity, err := s.repo.GetByTenantAndCustomer(tID, custID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,7 @@ func (s *ConversationService) Create(tID uint, custID uuid.UUID) (*domain.Conver
 		Status:     constant.ConvStatusOpen,
 		CreatedAt:  time.Now(),
 	}
-	_, err := s.convRepo.Create(convEntity)
+	_, err := s.repo.Create(convEntity)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +53,7 @@ func (s *ConversationService) Create(tID uint, custID uuid.UUID) (*domain.Conver
 	return convEntity.ToDto(), nil
 }
 
-func (s *ConversationService) AssignConversation(id uuid.UUID) error {
+func (s *ConversationService) AssignConversation(id uuid.UUID, agentID uuid.UUID) error {
 	conv, err := s.GetByID(id)
 	if err != nil {
 		return err
@@ -65,13 +64,15 @@ func (s *ConversationService) AssignConversation(id uuid.UUID) error {
 		return nil
 	}
 
-	err := s.userSvc.GetAvailableAgent()
-
-	return nil
+	data := &domain.ConversationEntity{
+		ID:       conv.ID,
+		TenantID: conv.TenantID,
+	}
+	return s.repo.UpdateAssignment(data, agentID)
 }
 
 func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {
-	err := s.convRepo.UpdateStatus(id, status)
+	err := s.repo.UpdateStatus(id, status)
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {
 	// Send to message queue for async processing
 	go func() {
 		data := &infra.ConversationStatusUpdatedMessage{
-			ConvID: id.String(),
+			ConvID: id,
 			Status: status,
 		}
 		bytes, err := json.Marshal(data)

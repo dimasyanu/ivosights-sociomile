@@ -151,8 +151,8 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 
 	expect := &infra.ConversationCreatedMessage{
 		TenantID: tenant.ID,
-		CustID:   customerID.String(),
-		ConvID:   message.ConversationID.String(),
+		CustID:   customerID,
+		ConvID:   message.ConversationID,
 		Message:  msg,
 	}
 	expectBytes, err := json.Marshal(expect)
