@@ -88,7 +88,7 @@ func (s *UserHandlerTestSuite) TearDownSuite() {
 
 func (s *UserHandlerTestSuite) MakeApp() *fiber.App {
 	app := fiber.New()
-	rest.RegisterRoutes(app, s.db, envPath)
+	rest.RegisterRoutes(app, s.db, nil, envPath)
 
 	return app
 }

@@ -14,11 +14,12 @@ import (
 
 type ConversationService struct {
 	convRepo repository.ConversationRepository
+	userSvc  *UserService
 	mq       infra.QueueClient
 }
 
-func NewConversationService(convRepo repository.ConversationRepository, mq infra.QueueClient) *ConversationService {
-	return &ConversationService{convRepo: convRepo, mq: mq}
+func NewConversationService(convRepo repository.ConversationRepository, userSvc *UserService, mq infra.QueueClient) *ConversationService {
+	return &ConversationService{convRepo: convRepo, userSvc: userSvc, mq: mq}
 }
 
 func (s *ConversationService) GetByID(id uuid.UUID) (*domain.Conversation, error) {
@@ -51,6 +52,22 @@ func (s *ConversationService) Create(tID uint, custID uuid.UUID) (*domain.Conver
 	}
 
 	return convEntity.ToDto(), nil
+}
+
+func (s *ConversationService) AssignConversation(id uuid.UUID) error {
+	conv, err := s.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	// If conversation is already assigned, do nothing
+	if conv.AssignedAgentID != nil {
+		return nil
+	}
+
+	err := s.userSvc.GetAvailableAgent()
+
+	return nil
 }
 
 func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {

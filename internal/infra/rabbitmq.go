@@ -176,6 +176,20 @@ func (c *RabbitMQClient) PeekPublishedMessages() [][]byte {
 	return [][]byte{msg.Body}
 }
 
+func (c *RabbitMQClient) Clear() error {
+	ch, err := c.conn.Channel()
+	if err != nil {
+		return err
+	}
+	defer ch.Close()
+
+	_, err = ch.QueuePurge(c.config.Queue, false)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *RabbitMQClient) Close() error {
 	c.conn.Close()
 	return nil

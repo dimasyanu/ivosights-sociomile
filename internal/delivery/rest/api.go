@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dimasyanu/ivosights-sociomile/config"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/gofiber/fiber/v3"
 	"github.com/yokeTH/gofiber-scalar/scalar/v3"
 )
@@ -14,10 +15,10 @@ type RestApi struct {
 	port uint16
 }
 
-func SetupApp(db *sql.DB) *fiber.App {
+func SetupApp(db *sql.DB, mq infra.QueueClient) *fiber.App {
 	app := fiber.New()
 
-	RegisterRoutes(app, db, config.EnvPath)
+	RegisterRoutes(app, db, mq, config.EnvPath)
 
 	// Add OpenAPI UI route
 	cfg := scalar.Config{
@@ -28,9 +29,9 @@ func SetupApp(db *sql.DB) *fiber.App {
 	return app
 }
 
-func NewRestApi(c *config.RestConfig, db *sql.DB) *RestApi {
+func NewRestApi(c *config.RestConfig, db *sql.DB, mq infra.QueueClient) *RestApi {
 	return &RestApi{
-		App:  SetupApp(db),
+		App:  SetupApp(db, mq),
 		port: c.Port,
 	}
 }

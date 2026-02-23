@@ -84,6 +84,10 @@ func (s *MessageServiceTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *MessageServiceTestSuite) TearDownTest() {
+	s.mq.Clear()
+}
+
 // ===== Tests =====
 
 func (s *MessageServiceTestSuite) TestGetMessages() {
@@ -154,4 +158,29 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 	expectBytes, err := json.Marshal(expect)
 	s.NoError(err)
 	s.Equal(string(expectBytes), string(published[0]))
+}
+
+func (s *MessageServiceTestSuite) TestAssignAgentAfterConversationCreation() {
+	// Create a new tenant
+	tenant, err := s.tenantSvc.Create("Test Tenant")
+	s.NoError(err)
+	s.NotNil(tenant)
+
+	// Random customer ID for testing
+	customerID := uuid.New()
+
+	// Attempt to create a message without an existing conversation
+	msg := "Hello, I need help with my order."
+	message, err := s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
+	s.NoError(err)
+
+	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
+	s.NoError(err)
+	s.NotNil(client)
+
+	conv, err := s.convRepo.GetByID(message.ConversationID)
+	s.NoError(err)
+	s.NotNil(conv)
+	s.Nil(conv.AssignedAgentID)
+
 }

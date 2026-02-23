@@ -91,7 +91,3 @@ func (s *ConversationServiceTestSuite) TestGetByID() {
 	s.Require().NoError(err)
 	s.Require().Equal(conv.ID, convID)
 }
-
-func (s *ConversationServiceTestSuite) TestAssignAgentAfterCreation() {
-
-}

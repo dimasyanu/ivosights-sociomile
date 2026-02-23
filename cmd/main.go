@@ -19,8 +19,11 @@ func main() {
 	db := ConnectToDatabase()
 	defer db.Close()
 
+	mq := ConnectToMq()
+	defer mq.Close()
+
 	restConfig := config.NewRestConfig(config.EnvPath)
-	api := rest.NewRestApi(restConfig, db)
+	api := rest.NewRestApi(restConfig, db, mq)
 	api.Start()
 }
 
@@ -45,4 +48,15 @@ func ConnectToDatabase() *sql.DB {
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	return db
+}
+
+func ConnectToMq() infra.QueueClient {
+	rabbitMqCfg := config.NewRabbitMQConfig(config.EnvPath)
+
+	mq, err := infra.NewRabbitMQClient(rabbitMqCfg)
+	if err != nil {
+		panic("Error connecting to RabbitMQ: " + err.Error())
+	}
+
+	return mq
 }

@@ -1,8 +1,10 @@
 package models
 
+import "github.com/google/uuid"
+
 type ChannelPayload struct {
-	TenantID   string `json:"tenant_id" validate:"required"`
-	CustomerID string `json:"customer_id" validate:"required"`
-	Message    string `json:"message" validate:"required"`
-	Type       string `json:"type" validate:"required"`
+	TenantID   uint      `json:"tenant_id" validate:"required"`
+	CustomerID uuid.UUID `json:"customer_id" validate:"required"`
+	Message    string    `json:"message" validate:"required"`
+	SenderType string    `json:"sender_type" validate:"required"`
 }

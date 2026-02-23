@@ -1,0 +1,176 @@
+package tests
+
+import (
+	"bytes"
+	"database/sql"
+	"encoding/json"
+	"net/http/httptest"
+	"sync"
+	"testing"
+
+	"github.com/dimasyanu/ivosights-sociomile/cmd/listener"
+	"github.com/dimasyanu/ivosights-sociomile/config"
+	"github.com/dimasyanu/ivosights-sociomile/constant"
+	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest"
+	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
+	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
+	"github.com/dimasyanu/ivosights-sociomile/internal/repository/mysqlrepo"
+	"github.com/dimasyanu/ivosights-sociomile/service"
+	"github.com/dimasyanu/ivosights-sociomile/util"
+	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+)
+
+type MessageHandlerTestSuite struct {
+	mysqlCfg    *config.MysqlConfig
+	rabbitMqCfg *config.RabbitMQConfig
+
+	db       *sql.DB
+	repo     repository.UserRepository
+	convRepo repository.ConversationRepository
+
+	svc       *service.UserService
+	tenantSvc *service.TenantService
+	mq        infra.QueueClient
+
+	app *fiber.App
+
+	suite.Suite
+}
+
+func TestMessageHandlerTestSuite(t *testing.T) {
+	suite.Run(t, new(MessageHandlerTestSuite))
+}
+
+func (s *MessageHandlerTestSuite) SetupSuite() {
+	dbName := "test_message_handler"
+
+	const envPath = "../.env"
+
+	// Load configuration
+	s.mysqlCfg = config.NewMysqlConfig(envPath)
+	s.mysqlCfg.Database = dbName
+	s.rabbitMqCfg = config.NewRabbitMQConfig(envPath)
+
+	// Create test database
+	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
+	if err := util.CrateMysqlDatabase(s.mysqlCfg); err != nil {
+		s.T().Fatalf("Failed to create MySQL database: %v", err)
+	}
+
+	// Initialize database and repositories
+	var err error
+	s.db, err = infra.NewMySQLDatabase(s.mysqlCfg)
+	if err != nil {
+		s.T().Fatalf("Failed to connect to database: %v", err)
+	}
+	s.T().Logf("Successfully connected to MySQL.")
+
+	s.repo = mysqlrepo.NewUserRepository(s.db)
+	s.convRepo = mysqlrepo.NewConversationRepository(s.db)
+	tenantRepo := mysqlrepo.NewTenantRepository(s.db)
+
+	s.svc = service.NewUserService(s.repo)
+	s.tenantSvc = service.NewTenantService(tenantRepo)
+
+	s.mq, err = infra.NewRabbitMQClient(s.rabbitMqCfg) // Initialize the queue client
+	if err != nil {
+		s.T().Fatalf("Failed to initialize RabbitMQ client: %v", err)
+	}
+
+	s.app = s.MakeApp() // Initialize the Fiber app with routes
+}
+
+func (s *MessageHandlerTestSuite) TearDownSuite() {
+	// Drop test database
+	s.T().Logf("Dropping database '%s'\n", s.mysqlCfg.Database)
+	if err := util.DropMysqlDatabase(s.mysqlCfg); err != nil {
+		s.T().Fatalf("Failed to drop MySQL database: %v", err)
+	}
+
+	// Close database connection
+	if err := s.db.Close(); err != nil {
+		s.T().Logf("Failed to close database connection: %v", err)
+	} else {
+		s.T().Logf("Database connection closed successfully.")
+	}
+
+	// Close RabbitMQ connection
+	if err := s.mq.Close(); err != nil {
+		s.T().Logf("Failed to close RabbitMQ connection: %v", err)
+	} else {
+		s.T().Logf("RabbitMQ connection closed successfully.")
+	}
+}
+
+func (s *MessageHandlerTestSuite) TearDownTest() {
+	// Clear the queue after each test to ensure isolation
+	if err := s.mq.Clear(); err != nil {
+		s.T().Logf("Failed to clear RabbitMQ queue: %v", err)
+	} else {
+		s.T().Logf("RabbitMQ queue cleared successfully.")
+	}
+}
+
+// ====== Helper functions ======
+
+func (s *MessageHandlerTestSuite) MakeApp() *fiber.App {
+	app := fiber.New()
+	rest.RegisterRoutes(app, s.db, s.mq, envPath)
+
+	return app
+}
+
+// ====== Tests ======
+
+func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() {
+	// Set up tenant
+	tenant, err := s.tenantSvc.Create("Test Tenant")
+	s.Require().NoError(err)
+
+	// Prepare request payload
+	payload := &models.ChannelPayload{
+		TenantID:   tenant.ID,
+		CustomerID: uuid.New(),
+		Message:    "Hello, I need help with my order.",
+		SenderType: constant.SenderTypeCustomer,
+	}
+	payloadBytes, err := json.Marshal(payload)
+	s.Require().NoError(err)
+	jsonReader := bytes.NewReader(payloadBytes)
+
+	// Create and send create user request with authorization header
+	req := httptest.NewRequest("POST", "/api/v1/channel/webhook", jsonReader)
+	req.Header.Set("Content-Type", "application/json")
+	res, err := s.app.Test(req)
+	s.Require().NoError(err)
+	s.Equal(201, res.StatusCode)
+
+	// Verify that a new conversation is not assigned to any agent
+	conv, err := s.convRepo.GetByTenantAndCustomer(tenant.ID, payload.CustomerID)
+	s.Require().NoError(err)
+	s.Equal(tenant.ID, conv.TenantID)
+	s.Equal(payload.CustomerID, conv.CustomerID)
+	s.Nil(conv.AssignedAgentID)
+
+	// Start the worker
+	listener, err := listener.NewQueueListener(s.rabbitMqCfg, s.db)
+	if err != nil {
+		s.T().Fatalf("Failed to initialize queue listener: %v", err)
+	}
+	defer listener.Close()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go listener.Start(&wg)
+
+	// // Wait for the worker to process the message
+	// wg.Wait()
+
+	// Verify that the the conversation is now assigned to an agent
+	conv, err = s.convRepo.GetByTenantAndCustomer(tenant.ID, payload.CustomerID)
+	s.Require().NoError(err)
+	s.NotNil(conv.AssignedAgentID)
+}
