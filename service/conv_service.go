@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/dimasyanu/ivosights-sociomile/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/repository"
@@ -27,30 +30,38 @@ func (s *ConversationService) GetByID(id uuid.UUID) (*domain.Conversation, error
 func (s *ConversationService) GetByTenantAndCustomer(tID uint, custID uuid.UUID) (*domain.Conversation, error) {
 	convEntity, err := s.convRepo.GetByTenantAndCustomer(tID, custID)
 	if err != nil {
-		return nil, err
+		if err != repository.ErrNotFound {
+			return nil, err
+		}
+		// If not found, create a new conversation
+		return s.Create(tID, custID)
 	}
 	return convEntity.ToDto(), nil
 }
 
-func (s *ConversationService) Create(tID uint, custID uuid.UUID) (uuid.UUID, error) {
+func (s *ConversationService) Create(tID uint, custID uuid.UUID) (*domain.Conversation, error) {
 	convEntity := &domain.ConversationEntity{
 		ID:         uuid.New(),
 		TenantID:   tID,
 		CustomerID: custID,
 		Status:     "open",
+		CreatedAt:  time.Now(),
 	}
-	id, err := s.convRepo.Create(convEntity)
+	_, err := s.convRepo.Create(convEntity)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	// Send to message queue for async processing
-	err = s.mq.PublishMessage("conversation_created", []byte(convEntity.ID.String()))
-	if err != nil {
-		return uuid.Nil, err
-	}
+	go func() {
+		err = s.mq.PublishMessage("conversation_created", []byte(convEntity.ID.String()))
+		if err != nil {
+			fmt.Printf("Failed to publish message for conversation creation: %v\n", err)
+			return
+		}
+	}()
 
-	return id, nil
+	return convEntity.ToDto(), nil
 }
 
 func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {
@@ -60,10 +71,13 @@ func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {
 	}
 
 	// Send to message queue for async processing
-	err = s.mq.PublishMessage("conversation_status_updated", []byte(id.String()))
-	if err != nil {
-		return err
-	}
+	go func() {
+		err = s.mq.PublishMessage("conversation_status_updated", []byte(id.String()))
+		if err != nil {
+			fmt.Printf("Failed to publish message for conversation status update: %v\n", err)
+			return
+		}
+	}()
 
 	return nil
 }

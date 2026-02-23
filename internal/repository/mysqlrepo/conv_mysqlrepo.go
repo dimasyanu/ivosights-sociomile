@@ -1,6 +1,7 @@
 package mysqlrepo
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/dimasyanu/ivosights-sociomile/domain"
@@ -13,27 +14,46 @@ type ConversationMySqlRepository struct {
 }
 
 // Create implements [repository.ConversationRepository].
-func (c *ConversationMySqlRepository) Create(conversation *domain.ConversationEntity) (uuid.UUID, error) {
-	panic("unimplemented")
-}
+func (r *ConversationMySqlRepository) Create(c *domain.ConversationEntity) (uuid.UUID, error) {
+	id := uuid.New()
+	pairs := map[string]any{
+		"id":          id,
+		"tenant_id":   c.TenantID,
+		"customer_id": c.CustomerID,
+		"status":      c.Status,
+		"created_at":  c.CreatedAt,
+	}
+	cols, slots, vals := MapForCreate(pairs)
 
-// Delete implements [repository.ConversationRepository].
-func (c *ConversationMySqlRepository) Delete(id uuid.UUID) error {
-	panic("unimplemented")
+	query := "INSERT INTO conversations (" + cols + ") VALUES (" + slots + ")"
+	_, err := r.db.ExecContext(context.Background(), query, vals...)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
 // GetByID implements [repository.ConversationRepository].
-func (c *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.ConversationEntity, error) {
+func (r *ConversationMySqlRepository) GetByID(id uuid.UUID) (*domain.ConversationEntity, error) {
 	panic("unimplemented")
 }
 
 // GetByTenantAndCustomer implements [repository.ConversationRepository].
-func (c *ConversationMySqlRepository) GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error) {
-	panic("unimplemented")
+func (r *ConversationMySqlRepository) GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error) {
+	var conversation domain.ConversationEntity
+	err := r.db.QueryRow("SELECT id, tenant_id, customer_id, status FROM conversations WHERE tenant_id = ? AND customer_id = ?", tenantID, customerID).Scan(&conversation.ID, &conversation.TenantID, &conversation.CustomerID, &conversation.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &conversation, nil
 }
 
 // UpdateStatus implements [repository.ConversationRepository].
-func (c *ConversationMySqlRepository) UpdateStatus(id uuid.UUID, status string) error {
+func (r *ConversationMySqlRepository) UpdateStatus(id uuid.UUID, status string) error {
 	panic("unimplemented")
 }
 

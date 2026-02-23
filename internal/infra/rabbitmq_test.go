@@ -51,10 +51,10 @@ func (s *RabbitMqTestSuite) TestPublishMessage() {
 	client, err := NewRabbitMQClient(s.config)
 	s.NoError(err)
 	s.NotNil(client)
+	defer client.Close()
 
 	err = client.PublishMessage(ConversationQueue, []byte(`{"message": "Hello, RabbitMQ!"}`))
 	s.NoError(err)
-	defer client.Close()
 
 	published := client.GetPublishedMessages()
 	s.Len(published, 1)

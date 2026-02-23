@@ -1,8 +1,6 @@
 package service
 
 import (
-	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/domain"
@@ -43,28 +41,20 @@ func (s *MessageService) GetMessages(convID uuid.UUID, offset int64, limit int) 
 	return messageDtos, total, nil
 }
 
-func (s *MessageService) CreateMessage(tID uint, custID uuid.UUID, senderType string, message *domain.Message) (uuid.UUID, error) {
-	var convID uuid.UUID
+func (s *MessageService) CreateMessage(tID uint, custID uuid.UUID, senderType string, message string) (uuid.UUID, error) {
+	// Check if conversation exists for the given tenant and customer
 	conv, err := s.convSvc.GetByTenantAndCustomer(tID, custID)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return uuid.Nil, err
-		}
-		convID, err = s.convSvc.Create(tID, custID)
-		if err != nil {
-			return uuid.Nil, err
-		}
-	} else {
-		convID = conv.ID
+		return uuid.Nil, err
 	}
 
 	messageEntity := &domain.MessageEntity{
-		ConversationID: convID,
+		ConversationID: conv.ID,
 		SenderType:     senderType,
-		Message:        message.Message,
+		Message:        message,
 		CreatedAt:      time.Now(),
 	}
-	messageEntity.ConversationID = convID
+	messageEntity.ConversationID = conv.ID
 	return s.repo.Create(messageEntity)
 }
 
