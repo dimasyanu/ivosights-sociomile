@@ -1,3 +1,3 @@
 package websocket
 
-// implement websocket delivery layer
+// websocket delivery layer implementation

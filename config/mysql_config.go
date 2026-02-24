@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-
-	"github.com/joho/godotenv"
 )
 
 type MysqlConfig struct {
@@ -19,19 +17,11 @@ type MysqlConfig struct {
 }
 
 func NewMysqlConfig(path ...string) *MysqlConfig {
-	var envPath string
-	if len(path) > 0 {
-		envPath = path[0]
-	} else {
-		envPath = ".env"
-	}
+	LoadEnvFile(path)
+	return LoadMysqlConfig()
+}
 
-	if len(envPath) > 0 {
-		if err := godotenv.Load(envPath); err != nil {
-			panic("Error loading configuration: " + err.Error())
-		}
-	}
-
+func LoadMysqlConfig() *MysqlConfig {
 	port, err := strconv.Atoi(os.Getenv("MYSQL_PORT"))
 	if err != nil {
 		panic("Invalid MYSQL_PORT: " + err.Error())

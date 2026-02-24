@@ -3,8 +3,6 @@ package config
 import (
 	"os"
 	"strconv"
-
-	"github.com/joho/godotenv"
 )
 
 type RestConfig struct {
@@ -12,10 +10,11 @@ type RestConfig struct {
 }
 
 func NewRestConfig(path ...string) *RestConfig {
-	if err := godotenv.Load(path...); err != nil {
-		panic("Error loading configuration: " + err.Error())
-	}
+	LoadEnvFile(path)
+	return LoadRestConfig()
+}
 
+func LoadRestConfig() *RestConfig {
 	port, err := strconv.Atoi(os.Getenv("HTTP_PORT"))
 	if err != nil {
 		panic("Invalid HTTP_PORT: " + err.Error())

@@ -11,4 +11,5 @@ type TicketRepository interface {
 	GetByConversationID(convID uuid.UUID) (*domain.TicketEntity, error)
 	Create(e *domain.TicketEntity) (*domain.TicketEntity, error)
 	Update(e *domain.TicketEntity) (*domain.TicketEntity, error)
+	UpdateStatus(id uuid.UUID, status string) (*domain.TicketEntity, error)
 }

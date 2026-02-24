@@ -13,22 +13,10 @@ import (
 )
 
 func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath string) {
-	// Initialize repositories
-	userRepo := mysqlrepo.NewUserRepository(db)
-	convRepo := mysqlrepo.NewConversationRepository(db)
-	msgRepo := mysqlrepo.NewMessageRepository(db)
-
-	// Initialize services
-	jwtService := service.NewJwtService(config.NewJwtConfig(envPath))
-	authService := service.NewAuthService(userRepo, jwtService)
-	userService := service.NewUserService(userRepo)
-	convService := service.NewConversationService(convRepo, mq)
-	messageService := service.NewMessageService(convService, msgRepo, mq)
-
-	// Initialize handlers with their respective services and repositories
-	authHandler := handler.NewAuthHandler(authService)
-	userHandler := handler.NewUserHandler(userService)
-	msgHandler := handler.NewMessageHandler(messageService)
+	authHandler,
+		userHandler,
+		msgHandler,
+		tenantHandler := getHandlers(db, mq, envPath)
 
 	// == Public Routes ==
 
@@ -53,6 +41,45 @@ func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath st
 	boff.Get("/users", userHandler.GetUsers)
 	boff.Get("/users/:id", userHandler.GetUserByID)
 	boff.Post("/users", userHandler.CreateUser)
-	boff.Put("/users/:id", userHandler.UpdateUser)
+	boff.Patch("/users/:id", userHandler.UpdateUser)
 	boff.Delete("/users/:id", userHandler.DeleteUser)
+
+	boff.Get("/tenants", tenantHandler.GetTenants)
+	boff.Post("/tenants", tenantHandler.CreateTenant)
+	boff.Patch("/tenants/:id", tenantHandler.UpdateTenant)
+	boff.Delete("/tenants/:id", tenantHandler.DeleteTenant)
+}
+
+// Initialize handlers
+func getHandlers(
+	db *sql.DB,
+	mq infra.QueueClient,
+	envPath string,
+) (
+	authHandler *handler.AuthHandler,
+	userHandler *handler.UserHandler,
+	msgHandler *handler.MessageHandler,
+	tenantHandler *handler.TenantHandler,
+) {
+	// Initialize repositories
+	userRepo := mysqlrepo.NewUserRepository(db)
+	convRepo := mysqlrepo.NewConversationRepository(db)
+	msgRepo := mysqlrepo.NewMessageRepository(db)
+	tenantRepo := mysqlrepo.NewTenantRepository(db)
+
+	// Initialize services
+	jwtService := service.NewJwtService(config.NewJwtConfig(envPath))
+	authService := service.NewAuthService(userRepo, jwtService)
+	userService := service.NewUserService(userRepo)
+	convService := service.NewConversationService(convRepo, mq)
+	messageService := service.NewMessageService(convService, msgRepo, mq)
+	tenantService := service.NewTenantService(tenantRepo)
+
+	// Initialize handlers with their respective services and repositories
+	authHandler = handler.NewAuthHandler(authService)
+	userHandler = handler.NewUserHandler(userService)
+	msgHandler = handler.NewMessageHandler(messageService)
+	tenantHandler = handler.NewTenantHandler(tenantService)
+
+	return
 }

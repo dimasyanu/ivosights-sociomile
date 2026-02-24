@@ -17,6 +17,12 @@ type Tenant struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type TenantFilter struct {
+	Name string `form:"name"`
+
+	Filter
+}
+
 func (e *TenantEntity) ToDto() *Tenant {
 	return &Tenant{
 		ID:        e.ID,

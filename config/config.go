@@ -1,19 +1,40 @@
 package config
 
+import (
+	"github.com/joho/godotenv"
+)
+
 const EnvPath = ".env"
 
 type Config struct {
 	Http     *RestConfig
-	Mysql    *MysqlConfig
+	MySQL    *MysqlConfig
 	Jwt      *JwtConfig
-	RabbitMq *RabbitMQConfig
+	RabbitMQ *RabbitMQConfig
 }
 
-func NewConfig() *Config {
+func NewConfig(path ...string) *Config {
+	LoadEnvFile(path)
 	return &Config{
-		Http:     NewRestConfig(EnvPath),
-		Mysql:    NewMysqlConfig(EnvPath),
-		Jwt:      NewJwtConfig(EnvPath),
-		RabbitMq: NewRabbitMQConfig(EnvPath),
+		Http:     LoadRestConfig(),
+		MySQL:    LoadMysqlConfig(),
+		Jwt:      LoadJwtConfig(),
+		RabbitMQ: LoadRabbitMQConfig(),
 	}
+}
+
+func LoadEnvFile(path []string) string {
+	var envPath string
+	if len(path) > 0 {
+		envPath = path[0]
+	} else {
+		envPath = ".env"
+	}
+
+	if len(envPath) > 0 {
+		if err := godotenv.Load(envPath); err != nil {
+			panic("Error loading configuration: " + err.Error())
+		}
+	}
+	return envPath
 }

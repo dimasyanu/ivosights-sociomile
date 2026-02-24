@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
@@ -15,7 +17,7 @@ type TicketMysqlRepo struct {
 	db *sql.DB
 }
 
-func NewTicketMysqlRepo(db *sql.DB) repo.TicketRepository {
+func NewTicketRepository(db *sql.DB) repo.TicketRepository {
 	return &TicketMysqlRepo{db: db}
 }
 
@@ -26,13 +28,14 @@ func (r *TicketMysqlRepo) GetList(f *domain.TicketFilter) ([]*domain.TicketEntit
 
 // Create implements [repo.TicketRepository].
 func (r *TicketMysqlRepo) Create(e *domain.TicketEntity) (*domain.TicketEntity, error) {
-	id := uuid.New()
 	pairs := map[string]any{
-		"id":              id,
+		"id":              e.ID,
+		"tenant_id":       e.TenantID,
 		"conversation_id": e.ConversationID,
 		"title":           e.Title,
 		"description":     e.Description,
 		"status":          e.Status,
+		"priority":        e.Priority,
 		"created_at":      e.CreatedAt,
 		"created_by":      e.CreatedBy,
 		"updated_at":      e.UpdatedAt,
@@ -45,7 +48,6 @@ func (r *TicketMysqlRepo) Create(e *domain.TicketEntity) (*domain.TicketEntity, 
 	if err != nil {
 		return nil, err
 	}
-	e.ID = id
 	return e, nil
 
 }
@@ -58,8 +60,12 @@ func (r *TicketMysqlRepo) get(m map[string]any) (*domain.TicketEntity, error) {
 	var args []any
 	var conditions []string
 	for k, v := range m {
-		conditions = append(conditions, k+" = ?")
 		args = append(args, v)
+		if _, ok := v.(interface{ String() string }); ok && strings.Contains(fmt.Sprintf("%T", v), "UUID") {
+			conditions = append(conditions, k+" = UUID_TO_BIN(?)")
+			continue
+		}
+		conditions = append(conditions, k+" = ?")
 	}
 	query += strings.Join(conditions, " AND ")
 
@@ -99,11 +105,19 @@ func (r *TicketMysqlRepo) Update(e *domain.TicketEntity) (*domain.TicketEntity, 
 		"updated_by":  e.UpdatedBy,
 	}
 	sets, vals := MapForUpdate(pairs)
-	query := "UPDATE tickets SET " + sets + " WHERE id = ?"
-	vals = append(vals, e.ID)
+	query := "UPDATE tickets SET " + sets + " WHERE BIN_TO_UUID(id) = ?"
+	vals = append(vals, e.ID.String())
 	if _, err := r.db.ExecContext(context.Background(), query, vals...); err != nil {
 		return nil, err
 	}
 
 	return e, nil
+}
+
+func (r *TicketMysqlRepo) UpdateStatus(id uuid.UUID, status string) (*domain.TicketEntity, error) {
+	query := "UPDATE tickets SET status = ?, updated_at = ? WHERE BIN_TO_UUID(id) = ?"
+	if _, err := r.db.ExecContext(context.Background(), query, status, time.Now(), id.String()); err != nil {
+		return nil, err
+	}
+	return r.GetByID(id)
 }

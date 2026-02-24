@@ -15,18 +15,32 @@ func NewTenantService(repo repository.TenantRepository) *TenantService {
 	return &TenantService{repo: repo}
 }
 
+func (s *TenantService) GetTenants(filter *domain.TenantFilter) (*domain.Paginated[domain.Tenant], error) {
+	tenantEntities, total, err := s.repo.GetTenants(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	tenants := make([]domain.Tenant, len(tenantEntities))
+	for i, entity := range tenantEntities {
+		tenants[i] = *entity.ToDto()
+	}
+
+	return &domain.Paginated[domain.Tenant]{
+		Items:    tenants,
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+		Total:    total,
+	}, nil
+}
+
 func (s *TenantService) GetTenantByID(id uint) (*domain.Tenant, error) {
 	tenantEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &domain.Tenant{
-		ID:        tenantEntity.ID,
-		Name:      tenantEntity.Name,
-		CreatedAt: tenantEntity.CreatedAt,
-		UpdatedAt: tenantEntity.UpdatedAt,
-	}, nil
+	return tenantEntity.ToDto(), nil
 }
 
 func (s *TenantService) Create(name string) (*domain.Tenant, error) {

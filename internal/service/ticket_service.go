@@ -3,6 +3,7 @@ package service
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
@@ -57,8 +58,22 @@ func (s *TicketService) GetByConversationID(convID uuid.UUID) (*domain.Ticket, e
 	return ticketEntitiy.ToDto(), nil
 }
 
-func (s *TicketService) Create(entity *domain.TicketEntity) (*domain.Ticket, error) {
-	createdEntity, err := s.repo.Create(entity)
+func (s *TicketService) Create(e *domain.TicketEntity, pic string) (*domain.Ticket, error) {
+	t, err := s.GetByConversationID(e.ConversationID)
+	if err != nil && !errors.Is(err, repo.ErrNotFound) {
+		return nil, err
+	}
+	if t != nil {
+		return nil, errors.New("ticket already exists for this conversation")
+	}
+
+	e.ID = uuid.New()
+	e.CreatedAt = time.Now()
+	e.CreatedBy = pic
+	e.UpdatedAt = time.Now()
+	e.UpdatedBy = pic
+
+	createdEntity, err := s.repo.Create(e)
 	if err != nil {
 		return nil, err
 	}
@@ -71,4 +86,36 @@ func (s *TicketService) Update(entity *domain.TicketEntity) (*domain.Ticket, err
 		return nil, err
 	}
 	return updatedEntity.ToDto(), nil
+}
+
+func (s *TicketService) UpdateStatus(id uuid.UUID, status string) (*domain.Ticket, error) {
+	ticket, err := s.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if ticket == nil {
+		return nil, repo.ErrNotFound
+	}
+	updatedEntity, err := s.repo.UpdateStatus(ticket.ID, status)
+	if err != nil {
+		return nil, err
+	}
+	return updatedEntity.ToDto(), nil
+}
+
+func (s *TicketService) Delete(id uuid.UUID) error {
+	ticket, err := s.GetByID(id)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	ticket.DeletedAt = &now
+	_, err = s.repo.Update(&domain.TicketEntity{
+		ID:        ticket.ID,
+		DeletedAt: ticket.DeletedAt,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

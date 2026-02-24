@@ -12,7 +12,6 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 )
 
-// Option: Implement a simple independent queue listener
 // func main() {}
 
 type QueueListener struct {
@@ -58,7 +57,9 @@ func (l *QueueListener) processMessage(msg []byte) {
 }
 
 func (l *QueueListener) Start(done *sync.WaitGroup) {
-	defer done.Done()
+	if done != nil {
+		defer done.Done()
+	}
 
 	// Listen to the queue and process messages
 	var err error

@@ -1,3 +1,3 @@
 package graphql
 
-// Implement GraphQL delivery layer
+// GraphQL delivery layer implementation

@@ -1,6 +1,6 @@
 package constant
 
-var (
+const (
 	SenderTypeCustomer = "customer"
 	SenderTypeAgent    = "agent"
 

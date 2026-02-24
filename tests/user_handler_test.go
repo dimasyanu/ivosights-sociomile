@@ -93,7 +93,7 @@ func (s *UserHandlerTestSuite) MakeApp() *fiber.App {
 	return app
 }
 
-func login(s *UserHandlerTestSuite, app *fiber.App) string {
+func login(s *suite.Suite, app *fiber.App) string {
 	// Set up payload for login request
 	payload := models.LoginRequest{
 		Email:    adminEmail,
@@ -132,7 +132,7 @@ func (s *UserHandlerTestSuite) TestAccessUser_Unauthorized() {
 
 func (s *UserHandlerTestSuite) TestCreateUser_Success() {
 	// Login to get access token
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Set up payload for create user request
 	payload := models.UserCreateRequest{
@@ -160,7 +160,7 @@ func (s *UserHandlerTestSuite) TestCreateUser_DuplicateEmail() {
 	s.svc.CreateUser("Existing User", email, "password123", []string{domain.RoleAgent}, adminEmail)
 
 	// Login to get access token
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Set up payload for create user request
 	payload := models.UserCreateRequest{
@@ -185,7 +185,7 @@ func (s *UserHandlerTestSuite) TestCreateUser_DuplicateEmail() {
 
 func (s *UserHandlerTestSuite) TestCreateUser_InvalidInput() {
 	// Login to get access token
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Set up payload for create user request
 	payload := models.UserCreateRequest{
@@ -212,7 +212,7 @@ func (s *UserHandlerTestSuite) TestGetUserByID_Success() {
 	id, err := s.svc.CreateUser("User", "user_by_id@mail.com", "password123", []string{domain.RoleAgent}, adminEmail)
 	s.Require().NoError(err)
 
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	req := httptest.NewRequest("GET", "/api/v1/backoffice/users/"+id.String(), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -222,7 +222,7 @@ func (s *UserHandlerTestSuite) TestGetUserByID_Success() {
 }
 
 func (s *UserHandlerTestSuite) TestGetUserByID_NotFound() {
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	req := httptest.NewRequest("GET", "/api/v1/backoffice/users/00000000-0000-0000-0000-000000000000", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -237,7 +237,7 @@ func (s *UserHandlerTestSuite) TestUpdateUser_Success() {
 	s.Require().NoError(err)
 
 	// Login to get access token
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Set up payload for update user request
 	newName := "Updated User"
@@ -269,7 +269,7 @@ func (s *UserHandlerTestSuite) TestUpdateUser_Success() {
 func (s *UserHandlerTestSuite) TestUpdateUser_NotFound() {
 	s.svc.CreateUser("User", "update_unknown_user@mail.com", "password123", []string{domain.RoleAgent}, adminEmail)
 
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Set up payload for update user request
 	newName := "Updated User"
@@ -294,7 +294,7 @@ func (s *UserHandlerTestSuite) TestDeleteUser_Success() {
 	id, err := s.svc.CreateUser("User", "user_delete@mail.com", "password123", []string{domain.RoleAgent}, adminEmail)
 	s.Require().NoError(err)
 
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Create and send delete user request with authorization header
 	req := httptest.NewRequest("DELETE", "/api/v1/backoffice/users/"+id.String(), nil)
@@ -310,7 +310,7 @@ func (s *UserHandlerTestSuite) TestDeleteUser_Success() {
 }
 
 func (s *UserHandlerTestSuite) TestDeleteUser_NotFound() {
-	token := login(s, s.app)
+	token := login(&s.Suite, s.app)
 
 	// Create and send delete user request with authorization header
 	req := httptest.NewRequest("DELETE", "/api/v1/backoffice/users/"+uuid.New().String(), nil)

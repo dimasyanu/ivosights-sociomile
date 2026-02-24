@@ -18,13 +18,12 @@ import (
 )
 
 type MessageServiceTestSuite struct {
-	svc         *MessageService
-	tenantSvc   *TenantService
-	rabbitMqCfg *config.RabbitMQConfig
-	mysqlCfg    *config.MysqlConfig
-	convRepo    repo.ConversationRepository
-	db          *sql.DB
-	mq          infra.QueueClient
+	svc       *MessageService
+	tenantSvc *TenantService
+	cfg       *config.Config
+	convRepo  repo.ConversationRepository
+	db        *sql.DB
+	mq        infra.QueueClient
 
 	suite.Suite
 }
@@ -38,20 +37,18 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	const envPath = "../../.env"
 
 	// Load configuration
-	rabbitMqCfg := config.NewRabbitMQConfig(envPath)
-	s.mysqlCfg = config.NewMysqlConfig(envPath)
-	s.rabbitMqCfg = config.NewRabbitMQConfig(envPath)
-	s.mysqlCfg.Database = dbName
+	s.cfg = config.NewConfig(envPath)
+	s.cfg.MySQL.Database = dbName
 
 	// Create test database
-	s.T().Logf("Creating database '%s'\n", s.mysqlCfg.Database)
-	if err := utils.CrateMysqlDatabase(envPath, s.mysqlCfg); err != nil {
+	s.T().Logf("Creating database '%s'\n", s.cfg.MySQL.Database)
+	if err := utils.CrateMysqlDatabase(envPath, s.cfg.MySQL); err != nil {
 		s.T().Fatalf("Failed to create MySQL database: %v", err)
 	}
 
 	// Initialize database and repositories
 	var err error
-	s.db, err = infra.NewMySQLDatabase(s.mysqlCfg)
+	s.db, err = infra.NewMySQLDatabase(s.cfg.MySQL)
 	if err != nil {
 		s.T().Fatalf("Failed to connect to database: %v", err)
 	}
@@ -64,7 +61,7 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	tntRepo := mysqlrepo.NewTenantRepository(s.db)
 
 	// Initialize RabbitMQ client
-	s.mq, err = infra.NewRabbitMQClient(rabbitMqCfg)
+	s.mq, err = infra.NewRabbitMQClient(s.cfg.RabbitMQ)
 	if err != nil {
 		s.T().Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
@@ -78,8 +75,8 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 func (s *MessageServiceTestSuite) TearDownSuite() {
 	s.db.Close()
 	s.mq.Close()
-	s.T().Logf("Dropping '%s' database ...", s.mysqlCfg.Database)
-	if err := utils.DropMysqlDatabase(s.mysqlCfg); err != nil {
+	s.T().Logf("Dropping '%s' database ...", s.cfg.MySQL.Database)
+	if err := utils.DropMysqlDatabase(s.cfg.MySQL); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
 }
@@ -118,7 +115,7 @@ func (s *MessageServiceTestSuite) TestCreateMessage() {
 	_, err = s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
 	s.NoError(err)
 
-	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
+	client, err := infra.NewRabbitMQClient(s.cfg.RabbitMQ)
 	s.NoError(err)
 	s.NotNil(client)
 
@@ -141,7 +138,7 @@ func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQ
 	message, err := s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
 	s.NoError(err)
 
-	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
+	client, err := infra.NewRabbitMQClient(s.cfg.RabbitMQ)
 	s.NoError(err)
 	s.NotNil(client)
 
@@ -174,7 +171,7 @@ func (s *MessageServiceTestSuite) TestAssignAgentAfterConversationCreation() {
 	message, err := s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
 	s.NoError(err)
 
-	client, err := infra.NewRabbitMQClient(s.rabbitMqCfg)
+	client, err := infra.NewRabbitMQClient(s.cfg.RabbitMQ)
 	s.NoError(err)
 	s.NotNil(client)
 

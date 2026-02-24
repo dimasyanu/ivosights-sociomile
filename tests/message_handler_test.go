@@ -188,9 +188,7 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	go listener.Start(&wg)
 
 	// // Wait for the worker to process the message
-	// wg.Wait()
-
-	time.Sleep(time.Millisecond * 50) // Wait for the worker to process the message
+	time.Sleep(time.Millisecond * 50)
 
 	// Verify that the the conversation is now assigned to an agent
 	conv, err = s.convRepo.GetByTenantAndCustomer(tenant.ID, payload.CustomerID)
