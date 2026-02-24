@@ -60,14 +60,14 @@ func (h *AuthHandler) AuthorizationMiddleware(ctx fiber.Ctx) error {
 		})
 	}
 
-	token := authHeader[len("Bearer "):]
-	if token == "" {
+	if len(authHeader) <= len("Bearer ") || authHeader[len("Bearer "):] == "" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{
 			Status:  fiber.StatusUnauthorized,
 			Message: "Invalid Authorization header format",
 		})
 	}
 
+	token := authHeader[len("Bearer "):]
 	user, err := h.svc.ValidateToken(token)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{

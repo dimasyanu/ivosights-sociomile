@@ -16,14 +16,12 @@ func NewMessageHandler(svc *service.MessageService) *MessageHandler {
 
 // HandleMessage godoc
 // @Summary Handle incoming messages from channels
-// @Description Process incoming messages from various channels and perform necessary actions.
+// @Description Process incoming messages from various channels.
 // @Tags Messages
 // @Accept json
 // @Produce json
-// @Param message body models.MessageRequest true "Message payload"
-// @Success 201 {object} models.Res[any]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Param message body models.ChannelPayload true "Message payload"
+// @Success 201 {object} any
 // @Router /api/v1/message [post]
 func (h *MessageHandler) HandleMessage(ctx fiber.Ctx) error {
 	var req models.ChannelPayload

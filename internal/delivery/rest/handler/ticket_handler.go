@@ -16,6 +16,17 @@ func NewTicketHandler(svc *service.TicketService) *TicketHandler {
 	return &TicketHandler{svc: svc}
 }
 
+// GetTickets godoc
+// @Summary Get list of tickets
+// @Description Get paginated list of tickets with optional filters
+// @Tags Tickets
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param page_size query int false "Page size"
+// @Param status query string false "Filter by status (open, closed, assigned)"
+// @Success 200 {object} domain.Ticket
+// @Router /tickets [get]
 func (h *TicketHandler) GetTickets(ctx fiber.Ctx) error {
 	f := &domain.TicketFilter{}
 	// Bind query parameters to filter struct
@@ -41,6 +52,16 @@ func (h *TicketHandler) GetTickets(ctx fiber.Ctx) error {
 	})
 }
 
+// UpdateTicketStatus godoc
+// @Summary Update ticket status
+// @Description Update the status of a ticket by its ID
+// @Tags Tickets
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Param status body models.UpdateTicketStatusRequest true "New status for the ticket"
+// @Success 200 {object} domain.Ticket
+// @Router /tickets/{id}/status [put]
 func (h *TicketHandler) UpdateTicketStatus(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := uuid.Parse(idParam)

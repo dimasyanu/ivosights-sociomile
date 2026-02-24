@@ -98,3 +98,13 @@ func (s *ConversationServiceTestSuite) TestGetByID() {
 	s.NotNil(conv.ID)
 	s.NotEqual(uuid.Nil, conv.ID)
 }
+
+func (s *ConversationServiceTestSuite) TestGetList() {
+	list, err := s.svc.GetList(nil)
+	s.NoError(err)
+	s.NotNil(list)
+	s.Equal(uint64(0), list.Total)
+	s.Equal(uint(1), list.Page)
+	s.Equal(uint(25), list.PageSize)
+	s.Empty(list.Items)
+}

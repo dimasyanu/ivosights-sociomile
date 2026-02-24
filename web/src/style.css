@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+html,
+body,
+#app {
+height: 100%;
+}
+
+html {
+  --font-sans: "Inclusive Sans", sans-serif;
+  --radius-box: 0.25rem;
+}
+
+main {
+  padding: calc(var(--spacing) * 6);
+  height: calc(100vh - (var(--spacing) * l6));
+  background-color: var(--color-base-300);
+  flex-grow: 1;
+}

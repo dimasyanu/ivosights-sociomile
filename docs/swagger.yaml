@@ -1,4 +1,88 @@
 definitions:
+  domain.Conversation:
+    properties:
+      assigned_agent_id:
+        type: string
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      tenant_id:
+        type: integer
+    type: object
+  domain.Tenant:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.Ticket:
+    properties:
+      conversation_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      priority:
+        type: integer
+      status:
+        type: string
+      subject:
+        type: string
+      tenant_id:
+        type: integer
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+    type: object
+  models.ChannelPayload:
+    properties:
+      customer_id:
+        type: string
+      message:
+        type: string
+      sender_type:
+        type: string
+      tenant_id:
+        type: integer
+    required:
+    - customer_id
+    - message
+    - sender_type
+    - tenant_id
+    type: object
   models.LoginRequest:
     properties:
       email:
@@ -8,8 +92,77 @@ definitions:
     type: object
   models.LoginResponse:
     properties:
-      token:
+      access_token:
         type: string
+    type: object
+  models.TenantCreateRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.TenantUpdateRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.UpdateConversationStatusRequest:
+    properties:
+      status:
+        enum:
+        - open
+        - closed
+        - assigned
+        type: string
+    required:
+    - status
+    type: object
+  models.UpdateTicketStatusRequest:
+    properties:
+      status:
+        enum:
+        - open
+        - in_progress
+        - closed
+        type: string
+    required:
+    - status
+    type: object
+  models.UserCreateRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      repeat_password:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+    required:
+    - email
+    - name
+    - password
+    - repeat_password
+    - roles
+    type: object
+  models.UserUpdateRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
     type: object
 info:
   contact: {}
@@ -42,4 +195,410 @@ paths:
       summary: User login
       tags:
       - auth
+  /api/v1/backoffice/tenants:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of tenants with optional filtering by
+        name.
+      parameters:
+      - description: Search term for tenant name
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Tenant'
+      summary: Get a list of tenants
+      tags:
+      - Tenants
+    post:
+      consumes:
+      - application/json
+      description: Create a new tenant with the specified name.
+      parameters:
+      - description: Tenant creation payload
+        in: body
+        name: tenant
+        required: true
+        schema:
+          $ref: '#/definitions/models.TenantCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Tenant'
+      summary: Create a new tenant
+      tags:
+      - Tenants
+  /api/v1/backoffice/tenants/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing tenant by its ID.
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      summary: Delete a tenant
+      tags:
+      - Tenants
+    patch:
+      consumes:
+      - application/json
+      description: Update the name of an existing tenant by its ID.
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tenant update payload
+        in: body
+        name: tenant
+        required: true
+        schema:
+          $ref: '#/definitions/models.TenantUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Tenant'
+      summary: Update an existing tenant
+      tags:
+      - Tenants
+  /api/v1/backoffice/users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of users with optional filtering by name
+        and email.
+      parameters:
+      - description: Search term for name or email
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+      summary: Get a list of users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided details.
+      parameters:
+      - description: User creation request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+      summary: Create a new user
+      tags:
+      - Users
+  /api/v1/backoffice/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by their unique ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a user by their unique ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update an existing user's details by their unique ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+      summary: Update an existing user
+      tags:
+      - Users
+  /api/v1/message:
+    post:
+      consumes:
+      - application/json
+      description: Process incoming messages from various channels.
+      parameters:
+      - description: Message payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChannelPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema: {}
+      summary: Handle incoming messages from channels
+      tags:
+      - Messages
+  /conversations:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of conversations with optional filters
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by status (open, closed, assigned)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Conversation'
+      summary: Get list of conversations
+      tags:
+      - Conversations
+  /conversations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a conversation by its ID
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      summary: Delete conversation
+      tags:
+      - Conversations
+    get:
+      consumes:
+      - application/json
+      description: Get a single conversation by its ID
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Conversation'
+      summary: Get conversation by ID
+      tags:
+      - Conversations
+  /conversations/{id}/escalate:
+    post:
+      consumes:
+      - application/json
+      description: Escalate a conversation to a ticket.
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      summary: Escalate conversation to ticket
+      tags:
+      - Conversations
+  /conversations/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a conversation (open, closed, assigned)
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status for the conversation
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateConversationStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+      summary: Update conversation status
+      tags:
+      - Conversations
+  /tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of tickets with optional filters
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by status (open, closed, assigned)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      summary: Get list of tickets
+      tags:
+      - Tickets
+  /tickets/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a ticket by its ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status for the ticket
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateTicketStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      summary: Update ticket status
+      tags:
+      - Tickets
 swagger: "2.0"

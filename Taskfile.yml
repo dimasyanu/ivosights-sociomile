@@ -16,24 +16,26 @@ tasks:
     cmds:
       - ls .env
       - goose -version
-      - task: start-containers
+      - task: start-infra
+      - docker-compose up -d --wait
 
-  start-containers:
+  start-infra:
     cmds:
       - mkdir -p ./_run/mysql
       - mkdir -p ./_run/rabbitmq
-      - docker-compose up -d --wait
+      - docker-compose up mysql8 rabbitmq -d --wait
       - task: migrate
   
-  stop:
+  down:
     cmds:
-      - docker-compose down
+      - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
+      - docker-compose down --volumes --remove-orphans
+      - docker image rm sociomile-app:latest
 
   clean:
     cmds:
-      - docker-compose down --volumes --remove-orphans
-      - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
-      - task: start-containers
+      - task: down
+      - task: start
 
   test:
     cmds:

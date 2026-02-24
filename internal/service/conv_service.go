@@ -19,14 +19,22 @@ func NewConversationService(convRepo repo.ConversationRepository, mq infra.Queue
 	return &ConversationService{repo: convRepo, mq: mq}
 }
 
-func (s *ConversationService) GetList(filter *domain.ConversationFilter) (*domain.Paginated[domain.Conversation], error) {
-	if filter.Page < 1 {
-		filter.Page = 1
+func (s *ConversationService) GetList(f *domain.ConversationFilter) (*domain.Paginated[domain.Conversation], error) {
+	if f == nil {
+		f = &domain.ConversationFilter{
+			Filter: domain.Filter{
+				Page:     1,
+				PageSize: 25,
+			},
+		}
 	}
-	if filter.PageSize < 1 {
-		filter.PageSize = 25
+	if f.Page < 1 {
+		f.Page = 1
 	}
-	convEntities, total, err := s.repo.GetList(filter)
+	if f.PageSize < 1 {
+		f.PageSize = 25
+	}
+	convEntities, total, err := s.repo.GetList(f)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +47,8 @@ func (s *ConversationService) GetList(filter *domain.ConversationFilter) (*domai
 	return &domain.Paginated[domain.Conversation]{
 		Items:    convs,
 		Total:    total,
-		Page:     filter.Page,
-		PageSize: filter.PageSize,
+		Page:     f.Page,
+		PageSize: f.PageSize,
 	}, nil
 }
 

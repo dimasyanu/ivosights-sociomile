@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="96"
+   height="64"
+   viewBox="0 0 96.000001 64"
+   version="1.1"
+   id="svg11"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs11" />
+  <path
+     d="M 0.75,0.5 H 95.437999 V 63.500015 H 0.75"
+     fill="#b31942"
+     id="path1"
+     style="stroke-width:0.0143673" />
+  <path
+     d="m 0.75,7.5126367 h 94.688 m 0,9.7949473 H 0.75 m 0,9.794949 h 94.688 m 0,9.794949 H 0.75 m 0,9.794949 h 94.688 m 0,9.794948 H 0.75"
+     stroke="#ffffff"
+     stroke-width="4.33296"
+     id="path2" />
+  <path
+     d="M 0.75,0.5 H 48.630011 V 34.423085 H 0.75"
+     fill="#0a3161"
+     id="path3"
+     style="stroke-width:0.0161538" />
+  <g
+     fill="#ffffff"
+     id="g11"
+     transform="matrix(0.01615385,0,0,0.01615385,0.75,0.5)">
+    <g
+       id="s18">
+      <g
+         id="s9">
+        <g
+           id="s5">
+          <g
+             id="s4">
+            <path
+               id="s"
+               d="M 247,90 317.53423,307.08204 132.87322,172.91796 H 361.12678 L 176.46577,307.08204 Z" />
+            <use
+               xlink:href="#s"
+               y="420"
+               id="use3" />
+            <use
+               xlink:href="#s"
+               y="840"
+               id="use4" />
+            <use
+               xlink:href="#s"
+               y="1260"
+               id="use5" />
+          </g>
+          <use
+             xlink:href="#s"
+             y="1680"
+             id="use6" />
+        </g>
+        <use
+           xlink:href="#s4"
+           x="247"
+           y="210"
+           id="use7" />
+      </g>
+      <use
+         xlink:href="#s9"
+         x="494"
+         id="use8" />
+    </g>
+    <use
+       xlink:href="#s18"
+       x="988"
+       id="use9" />
+    <use
+       xlink:href="#s9"
+       x="1976"
+       id="use10" />
+    <use
+       xlink:href="#s5"
+       x="2470"
+       id="use11" />
+  </g>
+</svg>

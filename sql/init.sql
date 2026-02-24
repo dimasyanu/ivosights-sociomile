@@ -1,5 +1,7 @@
 CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'admin_password';
 GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%';
+CREATE USER IF NOT EXISTS 'admin'@'app' IDENTIFIED BY 'admin_password';
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'app';
 FLUSH PRIVILEGES;
 
 CREATE DATABASE IF NOT EXISTS <database_name>;

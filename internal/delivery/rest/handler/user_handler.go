@@ -28,9 +28,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 // @Param search query string false "Search term for name or email"
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
-// @Success 200 {object} models.Res[domain.Paginated[domain.User]]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.User
 // @Router /api/v1/backoffice/users [get]
 func (h *UserHandler) GetUsers(ctx fiber.Ctx) error {
 	f := &domain.UserFilter{}
@@ -67,9 +65,7 @@ func (h *UserHandler) GetUsers(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} models.Res[domain.User]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.User
 // @Router /api/v1/backoffice/users/{id} [get]
 func (h *UserHandler) GetUserByID(ctx fiber.Ctx) error {
 	// Extract user ID from path parameters
@@ -120,9 +116,7 @@ func (h *UserHandler) GetUserByID(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param user body models.UserCreateRequest true "User creation request"
-// @Success 200 {object} models.Res[domain.User]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.User
 // @Router /api/v1/backoffice/users [post]
 func (h *UserHandler) CreateUser(ctx fiber.Ctx) error {
 	// Get authenticated user
@@ -198,9 +192,7 @@ func (h *UserHandler) CreateUser(ctx fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "User ID"
 // @Param user body models.UserUpdateRequest true "User update request"
-// @Success 200 {object} models.Res[domain.User]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.User
 // @Router /api/v1/backoffice/users/{id} [put]
 func (h *UserHandler) UpdateUser(ctx fiber.Ctx) error {
 	pic := ctx.Locals("user").(*domain.User)
@@ -270,9 +262,7 @@ func (h *UserHandler) UpdateUser(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} models.Res[any]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} any
 // @Router /api/v1/backoffice/users/{id} [delete]
 func (h *UserHandler) DeleteUser(ctx fiber.Ctx) error {
 	pic := ctx.Locals("user").(*domain.User)

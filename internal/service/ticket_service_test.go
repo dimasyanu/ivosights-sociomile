@@ -27,7 +27,6 @@ type TicketServiceTest struct {
 
 	svc       *TicketService
 	tenantSvc *TenantService
-	convSvc   *ConversationService
 
 	suite.Suite
 }
@@ -68,7 +67,8 @@ func (s *TicketServiceTest) SetupSuite() {
 	s.convRepo = mysqlrepo.NewConversationRepository(s.db)
 	s.msgRepo = mysqlrepo.NewMessageRepository(s.db)
 
-	s.svc = NewTicketService(s.repo, s.convSvc, s.mq)
+	convSvc := NewConversationService(s.convRepo, s.mq)
+	s.svc = NewTicketService(s.repo, convSvc, s.mq)
 	s.tenantSvc = NewTenantService(mysqlrepo.NewTenantRepository(s.db))
 }
 

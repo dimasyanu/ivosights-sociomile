@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest/models"
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/service"
@@ -24,9 +26,7 @@ func NewTenantHandler(svc *service.TenantService) *TenantHandler {
 // @Param search query string false "Search term for tenant name"
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Number of items per page" default(10)
-// @Success 200 {object} models.Res[domain.Paginated[domain.Tenant]]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.Tenant
 // @Router /api/v1/backoffice/tenants [get]
 func (h *TenantHandler) GetTenants(ctx fiber.Ctx) error {
 	f := &domain.TenantFilter{}
@@ -63,9 +63,7 @@ func (h *TenantHandler) GetTenants(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param tenant body models.TenantCreateRequest true "Tenant creation payload"
-// @Success 201 {object} models.Res[domain.Tenant]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 201 {object} domain.Tenant
 // @Router /api/v1/backoffice/tenants [post]
 func (h *TenantHandler) CreateTenant(ctx fiber.Ctx) error {
 	req := &models.TenantCreateRequest{}
@@ -99,14 +97,31 @@ func (h *TenantHandler) CreateTenant(ctx fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Tenant ID"
 // @Param tenant body models.TenantUpdateRequest true "Tenant update payload"
-// @Success 200 {object} models.Res[domain.Tenant]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} domain.Tenant
 // @Router /api/v1/backoffice/tenants/{id} [patch]
 func (h *TenantHandler) UpdateTenant(ctx fiber.Ctx) error {
+	payload := &models.TenantUpdateRequest{}
+	if err := ctx.Bind().Body(payload); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(&models.Res[any]{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request",
+		})
+	}
+
+	id := ctx.Params("id")
+	idInt, _ := strconv.Atoi(id)
+	tenant, err := h.svc.Update(uint(idInt), payload.Name)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&models.Res[any]{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to update tenant",
+		})
+	}
+
 	return ctx.JSON(&models.Res[any]{
 		Status:  fiber.StatusOK,
-		Message: "UpdateTenant not implemented",
+		Message: "Tenant updated successfully",
+		Data:    tenant,
 	})
 }
 
@@ -117,13 +132,21 @@ func (h *TenantHandler) UpdateTenant(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Tenant ID"
-// @Success 200 {object} models.Res[any]
-// @Failure 400 {object} models.Res[any]
-// @Failure 500 {object} models.Res[any]
+// @Success 200 {object} any
 // @Router /api/v1/backoffice/tenants/{id} [delete]
 func (h *TenantHandler) DeleteTenant(ctx fiber.Ctx) error {
+	id := ctx.Params("id")
+	idInt, _ := strconv.Atoi(id)
+	err := h.svc.Delete(uint(idInt))
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&models.Res[any]{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to delete tenant",
+		})
+	}
+
 	return ctx.JSON(&models.Res[any]{
 		Status:  fiber.StatusOK,
-		Message: "DeleteTenant not implemented",
+		Message: "Tenant deleted successfully",
 	})
 }

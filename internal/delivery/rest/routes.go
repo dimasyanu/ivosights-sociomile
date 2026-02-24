@@ -23,6 +23,7 @@ func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath st
 
 	// == Public Routes ==
 
+	app.Use(corsMiddleware)
 	app.Get("/", func(ctx fiber.Ctx) error {
 		return ctx.JSON(&models.Res[any]{
 			Status:  fiber.StatusOK,
@@ -80,6 +81,19 @@ func withRolePolicy(allowedRoles []string) fiber.Handler {
 			Message: "Forbidden: insufficient permissions",
 		})
 	}
+}
+
+func corsMiddleware(ctx fiber.Ctx) error {
+	// Allow CORS for all origins (for testing purposes)
+	ctx.Set("Access-Control-Allow-Origin", "*")
+	ctx.Set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
+	ctx.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Handle preflight requests
+	if ctx.Method() == fiber.MethodOptions {
+		return ctx.SendStatus(fiber.StatusNoContent)
+	}
+	return ctx.Next()
 }
 
 // Initialize handlers

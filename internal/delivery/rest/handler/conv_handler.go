@@ -27,7 +27,7 @@ func NewConversationHandler(svc *service.ConversationService, ticketSvc *service
 // @Param page query int false "Page number"
 // @Param page_size query int false "Page size"
 // @Param status query string false "Filter by status (open, closed, assigned)"
-// @Success 200 {object} models.Res[*domain.Paginated[domain.Conversation]]
+// @Success 200 {object} domain.Conversation
 // @Router /conversations [get]
 func (h *ConversationHandler) GetConversations(ctx fiber.Ctx) error {
 	f := &domain.ConversationFilter{}
@@ -63,7 +63,7 @@ func (h *ConversationHandler) GetConversations(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Conversation ID"
-// @Success 200 {object} models.Res[*domain.Conversation]
+// @Success 200 {object} domain.Conversation
 // @Router /conversations/{id} [get]
 func (h *ConversationHandler) GetConversationByID(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
@@ -109,8 +109,8 @@ func (h *ConversationHandler) GetConversationByID(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Conversation ID"
-// @Param body body struct{Status string `json:"status" validate:"required,oneof=open closed assigned"`} true "New status"
-// @Success 200 {object} models.Res[any]
+// @Param status body models.UpdateConversationStatusRequest true "New status for the conversation"
+// @Success 200 {object} any
 // @Router /conversations/{id}/status [put]
 func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
@@ -122,9 +122,7 @@ func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 		})
 	}
 
-	var req struct {
-		Status string `json:"status" validate:"required,oneof=open closed assigned"`
-	}
+	var req models.UpdateConversationStatusRequest
 	if err := ctx.Bind().Body(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(&models.Res[any]{
 			Status:  fiber.StatusBadRequest,
@@ -159,7 +157,7 @@ func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Conversation ID"
-// @Success 200 {object} models.Res[any]
+// @Success 200 {object} any
 // @Router /conversations/{id}/escalate [post]
 func (h *ConversationHandler) EscalateConversationToTicket(ctx fiber.Ctx) error {
 	// Get authenticated user
@@ -221,7 +219,7 @@ func (h *ConversationHandler) EscalateConversationToTicket(ctx fiber.Ctx) error 
 // @Accept json
 // @Produce json
 // @Param id path string true "Conversation ID"
-// @Success 200 {object} models.Res[any]
+// @Success 200 {object} any
 // @Router /conversations/{id} [delete]
 func (h *ConversationHandler) DeleteConversation(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
