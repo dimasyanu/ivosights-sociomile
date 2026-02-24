@@ -48,6 +48,3 @@ Database migration menggunakan tool `goose`. File-file migrasi terdapat pada fol
 2. Karena saya kurang memahami kebutuhan spesifik untuk agent assignment pada suatu conversation yang baru/open, saya mengasumsikan semua agent memiliki kapasitas yang sama, sehingga untuk menentukan agent yang di-assign saya hanya memilih secara acak.
 3. Saya memilih Clean Architecture karena memberikan struktur yang jelas dan memisahkan tanggung jawab dengan baik, meskipun mungkin membutuhkan lebih banyak boilerplate code dibandingkan dengan arsitektur yang lebih sederhana.
 4. Saya menggunakan pendekatan shared database untuk multi-tenancy karena lebih sederhana dan waktu yang terbatas, walaupun rentan terhadap masalah keamanan dan isolasi data antar tenant dibandingkan dengan pendekatan dedicated database.
-
-## License
-MIT License. See [LICENSE](LICENSE) for more details.
