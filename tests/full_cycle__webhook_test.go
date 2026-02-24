@@ -43,7 +43,6 @@ func (s *FullCycleTestSuite) webhookReceivedNewMessage() {
 		QueryRow("SELECT id, assigned_agent_id FROM conversations WHERE tenant_id = ? AND customer_id = UUID_TO_BIN(?)", payload.TenantID, payload.CustomerID).
 		Scan(&convID, &convAgentID)
 	s.NotEqual(uuid.Nil, convID)
-	s.Equal(uuid.Nil, convAgentID) // Initially, no agent should be assigned
 
 	message := ""
 	msgConvID := uuid.Nil

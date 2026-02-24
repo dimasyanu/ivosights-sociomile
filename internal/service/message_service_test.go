@@ -40,6 +40,8 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	s.cfg = config.NewConfig(envPath)
 	s.cfg.MySQL.Database = dbName
 
+	utils.DropMysqlDatabase(s.cfg.MySQL)
+
 	// Create test database
 	s.T().Logf("Creating database '%s'\n", s.cfg.MySQL.Database)
 	if err := utils.CrateMysqlDatabase(envPath, s.cfg.MySQL); err != nil {

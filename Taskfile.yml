@@ -39,7 +39,7 @@ tasks:
 
   test:
     cmds:
-      - go test -count=1 ./... | grep -v '?'
+      - go test -count=1 -p=1 ./...
   
   default: 
     cmds:

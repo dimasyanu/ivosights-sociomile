@@ -30,6 +30,7 @@ func (s *RabbitMqTestSuite) SetupSuite() {
 }
 
 func (s *RabbitMqTestSuite) TearDownSuite() {
+	s.client.Clear()
 	s.client.Close()
 }
 

@@ -76,6 +76,14 @@ func (s *ConversationServiceTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *ConversationServiceTestSuite) TearDownTest() {
+	// Clean up conversations table after each test
+	_, err := s.db.Exec("DELETE FROM conversations")
+	if err != nil {
+		s.T().Logf("Failed to clean up conversations table: %v", err)
+	}
+}
+
 func (s *ConversationServiceTestSuite) TestGetByID() {
 	tenant, err := s.tenantSvc.Create("Test Tenant")
 	s.Require().NoError(err)
