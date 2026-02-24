@@ -1,0 +1,46 @@
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  build:
+    cmds:
+      - go build -o sociomile ./cmd/main.go
+
+  migrate:
+    cmds:
+      - docker exec -it sociomile-mysql /bin/bash -c "sed 's/<database_name>/{{.MYSQL_DATABASE}}/g' /usr/share/queries/init.sql | mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}}"
+      - goose up
+
+  start:
+    cmds:
+      - ls .env
+      - goose -version
+      - task: start-infra
+      - docker-compose up -d --wait
+
+  start-infra:
+    cmds:
+      - mkdir -p ./_run/mysql
+      - mkdir -p ./_run/rabbitmq
+      - docker-compose up mysql8 rabbitmq -d --wait
+      - task: migrate
+  
+  down:
+    cmds:
+      # - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
+      - docker-compose down --volumes --remove-orphans
+      - docker image rm sociomile-app:latest
+
+  clean:
+    cmds:
+      - task: down
+      - task: start
+
+  test:
+    cmds:
+      - go test -count=1 -p=1 ./...
+  
+  default: 
+    cmds:
+      - task: start

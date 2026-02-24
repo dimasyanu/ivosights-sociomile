@@ -1,0 +1,59 @@
+services:
+  app:
+    container_name: sociomile-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - UNIQUE=$(date +%s)
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql8:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sociomile-net
+
+  mysql8:
+    container_name: sociomile-mysql
+    image: mysql:8.4
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./_run/mysql:/var/lib/mysql
+      - ./sql:/usr/share/queries
+    command: mysqld --mysql-native-password=ON
+    healthcheck:
+      test: ["CMD", "mysql", "-uroot", "-p$MYSQL_ROOT_PASSWORD", "-e", "SELECT 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - sociomile-net
+
+  rabbitmq:
+    container_name: sociomile-rabbitmq
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./_run/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics --quiet check_running && rabbitmq-diagnostics --quiet check_local_alarms
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - sociomile-net
+
+networks:
+  sociomile-net:
+    name: sociomile-network

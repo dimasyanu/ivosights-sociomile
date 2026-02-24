@@ -1,0 +1,23 @@
+$smMin: 40rem;
+$mdMin: 48rem;
+$lgMin: 64rem;
+$xlMin: 80rem;
+$x2lMin: 96rem;
+
+$smMax: calc($mdMin - 1px);
+$mdMax: calc($lgMin - 1px);
+$lgMax: calc($xlMin - 1px);
+$xlMax: calc($x2lMin - 1px);
+
+$sidebarWidth: 256px;
+
+html {
+  --spacing: 0.25rem;
+  --topbar-h: calc(var(var(--spacing)) * 16);
+
+  --sm: 40rem;
+  --md: 48rem;
+  --lg: 64rem;
+  --xl: 80rem;
+  --2xl: 96rem;
+}
