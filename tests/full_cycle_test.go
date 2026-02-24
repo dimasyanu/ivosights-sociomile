@@ -124,7 +124,7 @@ func (s *FullCycleTestSuite) TearDownSuite() {
 
 func (s *FullCycleTestSuite) TestAppCycle() {
 	// Login as admin
-	s.token = login(&s.Suite, s.app)
+	s.token = loginAsAdmin(&s.Suite, s.app)
 
 	// Create a user
 	s.createAgentUser()
@@ -137,12 +137,20 @@ func (s *FullCycleTestSuite) TestAppCycle() {
 	s.webhookReceivedNewMessage()
 
 	// Fetch the conversation
+	convList := s.getConversationList()
+
+	// Fetch the conversation details
+	s.getConversationDetails(convList[0].ID)
 
 	// Login as agent
+	s.token = login(&s.Suite, s.app, agentEmail, agentPassword)
 
 	// Fetch the conversation again and verify the message is there
+	convList = s.getConversationList()
+	s.getConversationDetails(convList[0].ID)
 
 	// Escalate the conversation to a ticket
+	s.escalateConversationToTicket(convList[0].ID)
 
 	// Attempt to change the ticket status > SHOULD FAIL
 

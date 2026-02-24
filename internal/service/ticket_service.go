@@ -2,20 +2,24 @@ package service
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
+	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/google/uuid"
 )
 
 type TicketService struct {
 	repo repo.TicketRepository
+	mq   infra.QueueClient
 }
 
-func NewTicketService(ticketRepo repo.TicketRepository) *TicketService {
-	return &TicketService{repo: ticketRepo}
+func NewTicketService(ticketRepo repo.TicketRepository, mq infra.QueueClient) *TicketService {
+	return &TicketService{repo: ticketRepo, mq: mq}
 }
 
 func (s *TicketService) GetList(f *domain.TicketFilter) ([]*domain.Ticket, uint64, error) {
@@ -58,6 +62,25 @@ func (s *TicketService) GetByConversationID(convID uuid.UUID) (*domain.Ticket, e
 	return ticketEntitiy.ToDto(), nil
 }
 
+func (s *TicketService) ticketCreatedEvent(t *domain.Ticket) {
+	// Send to message queue for async processing
+	data := &infra.TicketCreatedMessage{
+		ConvID:   t.ConversationID,
+		TicketID: t.ID,
+		Status:   t.Status,
+	}
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("Failed to marshal ticket created message: %v\n", err)
+		return
+	}
+	err = s.mq.Publish("ticket_created", bytes)
+	if err != nil {
+		fmt.Printf("Failed to publish message for ticket created: %v\n", err)
+		return
+	}
+}
+
 func (s *TicketService) Create(e *domain.TicketEntity, pic string) (*domain.Ticket, error) {
 	t, err := s.GetByConversationID(e.ConversationID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
@@ -77,6 +100,10 @@ func (s *TicketService) Create(e *domain.TicketEntity, pic string) (*domain.Tick
 	if err != nil {
 		return nil, err
 	}
+
+	// Send event to message queue for async processing
+	go s.ticketCreatedEvent(createdEntity.ToDto())
+
 	return createdEntity.ToDto(), nil
 }
 

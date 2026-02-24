@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -183,9 +182,7 @@ func (s *MessageHandlerTestSuite) TestHandleMessageCreatedWithNewConversation() 
 	}
 	defer listener.Close()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go listener.Start(&wg)
+	go listener.Start(nil)
 
 	// // Wait for the worker to process the message
 	time.Sleep(time.Millisecond * 50)

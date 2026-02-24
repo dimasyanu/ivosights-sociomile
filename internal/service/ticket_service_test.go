@@ -19,6 +19,7 @@ import (
 type TicketServiceTest struct {
 	cfg *config.Config
 	db  *sql.DB
+	mq  infra.QueueClient
 
 	repo     repo.TicketRepository
 	convRepo repo.ConversationRepository
@@ -56,11 +57,17 @@ func (s *TicketServiceTest) SetupSuite() {
 	}
 	s.T().Logf("Successfully connected to MySQL.")
 
+	// Initialize RabbitMQ client
+	s.mq, err = infra.NewRabbitMQClient(s.cfg.RabbitMQ)
+	if err != nil {
+		s.T().Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+
 	s.repo = mysqlrepo.NewTicketRepository(s.db)
 	s.convRepo = mysqlrepo.NewConversationRepository(s.db)
 	s.msgRepo = mysqlrepo.NewMessageRepository(s.db)
 
-	s.svc = NewTicketService(s.repo)
+	s.svc = NewTicketService(s.repo, s.mq)
 	s.tenantSvc = NewTenantService(mysqlrepo.NewTenantRepository(s.db))
 }
 
@@ -70,6 +77,7 @@ func (s *TicketServiceTest) TearDownSuite() {
 	if err := utils.DropMysqlDatabase(s.cfg.MySQL); err != nil {
 		s.T().Fatalf("Failed to drop MySQL database: %v", err)
 	}
+	s.mq.Close()
 }
 
 // ===== Tests =====

@@ -15,6 +15,7 @@ import (
 func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath string) {
 	authHandler,
 		userHandler,
+		convHandler,
 		msgHandler,
 		tenantHandler := getHandlers(db, mq, envPath)
 
@@ -48,6 +49,11 @@ func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath st
 	boff.Post("/tenants", tenantHandler.CreateTenant)
 	boff.Patch("/tenants/:id", tenantHandler.UpdateTenant)
 	boff.Delete("/tenants/:id", tenantHandler.DeleteTenant)
+
+	boff.Get("/conversations", convHandler.GetConversations)
+	boff.Get("/conversations/:id", convHandler.GetConversationByID)
+	boff.Patch("/conversations/:id/status", convHandler.UpdateConversationStatus)
+	boff.Delete("/conversations/:id", convHandler.DeleteConversation)
 }
 
 // Initialize handlers
@@ -58,6 +64,7 @@ func getHandlers(
 ) (
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
+	convHandler *handler.ConversationHandler,
 	msgHandler *handler.MessageHandler,
 	tenantHandler *handler.TenantHandler,
 ) {
@@ -78,6 +85,7 @@ func getHandlers(
 	// Initialize handlers with their respective services and repositories
 	authHandler = handler.NewAuthHandler(authService)
 	userHandler = handler.NewUserHandler(userService)
+	convHandler = handler.NewConversationHandler(convService)
 	msgHandler = handler.NewMessageHandler(messageService)
 	tenantHandler = handler.NewTenantHandler(tenantService)
 

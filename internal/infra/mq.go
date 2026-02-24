@@ -21,3 +21,9 @@ type ConversationStatusUpdatedMessage struct {
 	ConvID uuid.UUID `json:"conv_id"`
 	Status string    `json:"status"`
 }
+
+type TicketCreatedMessage struct {
+	ConvID   uuid.UUID `json:"conv_id"`
+	TicketID uuid.UUID `json:"ticket_id"`
+	Status   string    `json:"status"`
+}

@@ -1,8 +1,6 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
@@ -21,12 +19,37 @@ func NewConversationService(convRepo repo.ConversationRepository, mq infra.Queue
 	return &ConversationService{repo: convRepo, mq: mq}
 }
 
-func (s *ConversationService) GetByID(id uuid.UUID) (*domain.Conversation, error) {
+func (s *ConversationService) GetList(filter *domain.ConversationFilter) (*domain.Paginated[domain.Conversation], error) {
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 25
+	}
+	convEntities, total, err := s.repo.GetList(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	convs := make([]domain.Conversation, len(convEntities))
+	for i, e := range convEntities {
+		convs[i] = *e.ToDto()
+	}
+
+	return &domain.Paginated[domain.Conversation]{
+		Items:    convs,
+		Total:    total,
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}, nil
+}
+
+func (s *ConversationService) GetByID(id uuid.UUID) (*domain.ConversationDetail, error) {
 	convEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
-	return convEntity.ToDto(), nil
+	return convEntity.ToDetailDto(), nil
 }
 
 func (s *ConversationService) GetByTenantAndCustomer(tID uint, custID uuid.UUID) (*domain.Conversation, error) {
@@ -77,23 +100,9 @@ func (s *ConversationService) UpdateStatus(id uuid.UUID, status string) error {
 		return err
 	}
 
-	// Send to message queue for async processing
-	go func() {
-		data := &infra.ConversationStatusUpdatedMessage{
-			ConvID: id,
-			Status: status,
-		}
-		bytes, err := json.Marshal(data)
-		if err != nil {
-			fmt.Printf("Failed to marshal conversation status updated message: %v\n", err)
-			return
-		}
-		err = s.mq.Publish("conversation_status_updated", bytes)
-		if err != nil {
-			fmt.Printf("Failed to publish message for conversation status update: %v\n", err)
-			return
-		}
-	}()
-
 	return nil
+}
+
+func (s *ConversationService) Delete(id uuid.UUID) error {
+	return s.repo.UpdateStatus(id, constant.ConvStatusClosed)
 }

@@ -6,6 +6,7 @@ import (
 )
 
 type ConversationRepository interface {
+	GetList(filter *domain.ConversationFilter) ([]domain.ConversationEntity, int64, error)
 	GetByID(id uuid.UUID) (*domain.ConversationEntity, error)
 	GetByTenantAndCustomer(tenantID uint, customerID uuid.UUID) (*domain.ConversationEntity, error)
 	Create(conversation *domain.ConversationEntity) (uuid.UUID, error)
