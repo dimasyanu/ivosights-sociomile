@@ -4,17 +4,18 @@ import (
 	"database/sql"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 )
 
 type TenantMysqlRepository struct {
 	db *sql.DB
 }
 
-func NewTenantRepository(db *sql.DB) *TenantMysqlRepository {
+func NewTenantRepository(db *sql.DB) repo.TenantRepository {
 	return &TenantMysqlRepository{db: db}
 }
 
-func (r *TenantMysqlRepository) GetTenants(filter *domain.TenantFilter) ([]domain.TenantEntity, int64, error) {
+func (r *TenantMysqlRepository) GetTenants(filter *domain.TenantFilter) ([]domain.TenantEntity, uint64, error) {
 	var tenants []domain.TenantEntity
 
 	// Build the base query
@@ -38,7 +39,7 @@ func (r *TenantMysqlRepository) GetTenants(filter *domain.TenantFilter) ([]domai
 	args = append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)
 
 	// Execute count query to get total number of records
-	var total int64
+	var total uint64
 	err := r.db.QueryRow(countQuery, args[:len(args)-2]...).Scan(&total)
 	if err != nil {
 		return nil, 0, err

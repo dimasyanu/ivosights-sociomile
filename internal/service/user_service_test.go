@@ -113,8 +113,8 @@ func (s *UserServiceTestSuite) TestGetUsers() {
 	paginated, err := s.svc.GetUsers(filter)
 	s.Require().NoError(err)
 	s.Require().NotNil(paginated)
-	s.Equal(1, paginated.Page)
-	s.Equal(25, paginated.PageSize)
+	s.Equal(uint(1), paginated.Page)
+	s.Equal(uint(25), paginated.PageSize)
 }
 
 func (s *UserServiceTestSuite) TestUpdateUser() {

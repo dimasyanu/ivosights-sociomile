@@ -56,7 +56,7 @@ func (r *TicketMysqlRepo) get(m map[string]any) (*domain.TicketEntity, error) {
 	if len(m) == 0 {
 		return nil, errors.New("no filter provided")
 	}
-	query := "SELECT id, conversation_id, title, description, status, created_at, created_by, updated_at, updated_by, deleted_at, deleted_by FROM tickets WHERE "
+	query := "SELECT id, tenant_id, conversation_id, title, description, status, priority, created_at, created_by, updated_at, updated_by, deleted_at, deleted_by FROM tickets WHERE "
 	var args []any
 	var conditions []string
 	for k, v := range m {
@@ -70,15 +70,29 @@ func (r *TicketMysqlRepo) get(m map[string]any) (*domain.TicketEntity, error) {
 	query += strings.Join(conditions, " AND ")
 
 	row := r.db.QueryRowContext(context.Background(), query, args...)
-	var t domain.TicketEntity
-	if err := row.Scan(&t.ID, &t.ConversationID, &t.Title, &t.Description, &t.Status, &t.CreatedAt, &t.CreatedBy, &t.UpdatedAt, &t.UpdatedBy, &t.DeletedAt, &t.DeletedBy); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+	t := &domain.TicketEntity{}
+	if err := row.Scan(
+		&t.ID,
+		&t.TenantID,
+		&t.ConversationID,
+		&t.Title,
+		&t.Description,
+		&t.Status,
+		&t.Priority,
+		&t.CreatedAt,
+		&t.CreatedBy,
+		&t.UpdatedAt,
+		&t.UpdatedBy,
+		&t.DeletedAt,
+		&t.DeletedBy,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repo.ErrNotFound
 		}
 		return nil, err
 	}
 
-	return &t, nil
+	return t, nil
 }
 
 // GetByConversationID implements [repo.TicketRepository].

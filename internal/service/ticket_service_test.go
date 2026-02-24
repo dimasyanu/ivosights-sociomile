@@ -27,6 +27,7 @@ type TicketServiceTest struct {
 
 	svc       *TicketService
 	tenantSvc *TenantService
+	convSvc   *ConversationService
 
 	suite.Suite
 }
@@ -67,7 +68,7 @@ func (s *TicketServiceTest) SetupSuite() {
 	s.convRepo = mysqlrepo.NewConversationRepository(s.db)
 	s.msgRepo = mysqlrepo.NewMessageRepository(s.db)
 
-	s.svc = NewTicketService(s.repo, s.mq)
+	s.svc = NewTicketService(s.repo, s.convSvc, s.mq)
 	s.tenantSvc = NewTenantService(mysqlrepo.NewTenantRepository(s.db))
 }
 
@@ -83,11 +84,7 @@ func (s *TicketServiceTest) TearDownSuite() {
 // ===== Tests =====
 
 func (s *TicketServiceTest) TestCreate() {
-	ticket, err := s.svc.Create(&domain.TicketEntity{
-		ID:             uuid.New(),
-		ConversationID: uuid.New(),
-		Status:         constant.TicketStatusOpen,
-	}, "admin@mail.com")
+	ticket, err := s.svc.Create(uuid.New(), "New Ticket", "Ticket Description", 1, "admin@mail.com")
 	s.Error(err) // Conversation should be exist
 
 	tenant, err := s.tenantSvc.Create("Test Tenant")
@@ -103,27 +100,13 @@ func (s *TicketServiceTest) TestCreate() {
 	s.NoError(err)
 	s.NotNil(convId)
 
-	ticket, err = s.svc.Create(&domain.TicketEntity{
-		ID:             uuid.New(),
-		TenantID:       tenant.ID,
-		ConversationID: convId,
-		Status:         constant.TicketStatusOpen,
-		Title:          "New Ticket",
-		Description:    "New ticket description",
-	}, "admin@mail.com")
+	ticket, err = s.svc.Create(convId, "New Ticket", "New ticket description", 1, "admin@mail.com")
 	s.NoError(err)
 	s.NotNil(ticket)
 	s.Equal(constant.TicketStatusOpen, ticket.Status)
 
 	// Another ticket for same conversation should return error
-	ticket, err = s.svc.Create(&domain.TicketEntity{
-		ID:             uuid.New(),
-		TenantID:       tenant.ID,
-		ConversationID: convId,
-		Status:         constant.TicketStatusOpen,
-		Title:          "Another Ticket",
-		Description:    "Another ticket description",
-	}, "admin@mail.com")
+	ticket, err = s.svc.Create(convId, "Another Ticket", "Another ticket description", 1, "admin@mail.com")
 	s.Error(err)
 }
 
@@ -141,13 +124,7 @@ func (s *TicketServiceTest) TestGetByID() {
 	s.NoError(err)
 	s.NotNil(convId)
 
-	ticket, err := s.svc.Create(&domain.TicketEntity{
-		TenantID:       tenant.ID,
-		ConversationID: convId,
-		Status:         constant.TicketStatusOpen,
-		Title:          "New Ticket",
-		Description:    "New ticket description",
-	}, "admin@mail.com")
+	ticket, err := s.svc.Create(convId, "New Ticket", "New ticket description", 1, "admin@mail.com")
 	s.NoError(err)
 	s.NotNil(ticket)
 	s.Equal(constant.TicketStatusOpen, ticket.Status)
@@ -174,13 +151,7 @@ func (s *TicketServiceTest) TestGetByConversationID() {
 	s.NoError(err)
 	s.NotNil(convId)
 
-	ticket, err := s.svc.Create(&domain.TicketEntity{
-		TenantID:       tenant.ID,
-		ConversationID: convId,
-		Status:         constant.TicketStatusOpen,
-		Title:          "New Ticket",
-		Description:    "New ticket description",
-	}, "admin@mail.com")
+	ticket, err := s.svc.Create(convId, "New Ticket", "New ticket description", 1, "admin@mail.com")
 	s.NoError(err)
 	s.NotNil(ticket)
 	s.Equal(constant.TicketStatusOpen, ticket.Status)
@@ -207,13 +178,7 @@ func (s *TicketServiceTest) TestUpdateStatus() {
 	s.NoError(err)
 	s.NotNil(convId)
 
-	ticket, err := s.svc.Create(&domain.TicketEntity{
-		TenantID:       tenant.ID,
-		ConversationID: convId,
-		Status:         constant.TicketStatusOpen,
-		Title:          "New Ticket",
-		Description:    "New ticket description",
-	}, "admin@mail.com")
+	ticket, err := s.svc.Create(convId, "New Ticket", "New ticket description", 1, "admin@mail.com")
 	s.NoError(err)
 	s.NotNil(ticket)
 	s.Equal(constant.TicketStatusOpen, ticket.Status)

@@ -7,6 +7,7 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/cmd/listener"
 	"github.com/dimasyanu/ivosights-sociomile/config"
 	"github.com/dimasyanu/ivosights-sociomile/internal/delivery/rest"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/constant"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/dimasyanu/ivosights-sociomile/internal/utils"
 	"github.com/gofiber/fiber/v3"
@@ -26,10 +27,6 @@ type FullCycleTestSuite struct {
 
 	// Message Queue
 	mq infra.QueueClient
-
-	// Repositories
-
-	// Services
 
 	// App
 	app *fiber.App
@@ -150,11 +147,14 @@ func (s *FullCycleTestSuite) TestAppCycle() {
 	s.getConversationDetails(convList[0].ID)
 
 	// Escalate the conversation to a ticket
-	s.escalateConversationToTicket(convList[0].ID)
+	ticketID := s.escalateConversationToTicket(convList[0].ID)
 
 	// Attempt to change the ticket status > SHOULD FAIL
+	s.updateTicketStatus(ticketID, constant.TicketStatusClosed, false)
 
 	// Login as admin
+	s.token = loginAsAdmin(&s.Suite, s.app)
 
 	// Change the ticket status to in_progress > SHOULD SUCCEED
+	s.updateTicketStatus(ticketID, constant.TicketStatusInProgress, true)
 }

@@ -54,10 +54,10 @@ func MapRowToUserEntity(row *sql.Row) (*domain.UserEntity, error) {
 	return &user, nil
 }
 
-func (r *userMysqlRepository) GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error) {
+func (r *userMysqlRepository) GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], uint64, error) {
 
 	// Get total count for pagination
-	var count int64
+	var count uint64
 	err := r.db.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM users").Scan(&count)
 	if err != nil {
 		return nil, 0, err

@@ -10,11 +10,12 @@ import (
 )
 
 type ConversationHandler struct {
-	svc *service.ConversationService
+	svc       *service.ConversationService
+	ticketSvc *service.TicketService
 }
 
-func NewConversationHandler(svc *service.ConversationService) *ConversationHandler {
-	return &ConversationHandler{svc: svc}
+func NewConversationHandler(svc *service.ConversationService, ticketSvc *service.TicketService) *ConversationHandler {
+	return &ConversationHandler{svc: svc, ticketSvc: ticketSvc}
 }
 
 // GetConversations godoc
@@ -148,6 +149,68 @@ func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 	return ctx.JSON(&models.Res[any]{
 		Status:  fiber.StatusOK,
 		Message: "Status updated successfully",
+	})
+}
+
+// EscalateConversationToTicket godoc
+// @Summary Escalate conversation to ticket
+// @Description Escalate a conversation to a ticket.
+// @Tags Conversations
+// @Accept json
+// @Produce json
+// @Param id path string true "Conversation ID"
+// @Success 200 {object} models.Res[any]
+// @Router /conversations/{id}/escalate [post]
+func (h *ConversationHandler) EscalateConversationToTicket(ctx fiber.Ctx) error {
+	// Get authenticated user
+	pic := ctx.Locals("user").(*domain.User)
+	if pic == nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(&models.Res[any]{
+			Status:  fiber.StatusUnauthorized,
+			Message: "Unauthorized",
+		})
+	}
+
+	// Parse conversation ID from path
+	idParam := ctx.Params("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(&models.Res[any]{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid conversation ID",
+		})
+	}
+
+	// Bind request body to struct
+	payload := &models.EscalateToTicketRequest{
+		Title: "Escalated from conversation " + id.String(),
+	}
+	if err := ctx.Bind().Body(payload); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(&models.Res[any]{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid request body",
+		})
+	}
+
+	// Create ticket from conversation
+	ticket, err := h.ticketSvc.Create(id, payload.Title, payload.Description, payload.Priority, pic.Email)
+	if err != nil {
+		if err == repo.ErrNotFound {
+			return ctx.Status(fiber.StatusNotFound).JSON(&models.Res[any]{
+				Status:  fiber.StatusNotFound,
+				Message: "Conversation not found",
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(&models.Res[any]{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to escalate conversation",
+		})
+	}
+
+	return ctx.JSON(&models.Res[any]{
+		Status:  fiber.StatusOK,
+		Message: "Conversation escalated to ticket successfully",
+		Data:    ticket,
 	})
 }
 

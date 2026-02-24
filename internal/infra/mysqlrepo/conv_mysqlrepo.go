@@ -23,7 +23,7 @@ func NewConversationRepository(db *sql.DB) repository.ConversationRepository {
 	}
 }
 
-func (r *ConversationMySqlRepository) GetList(f *domain.ConversationFilter) ([]domain.ConversationEntity, int64, error) {
+func (r *ConversationMySqlRepository) GetList(f *domain.ConversationFilter) ([]domain.ConversationEntity, uint64, error) {
 	// Build the SQL baseQuery based on the filter parameters
 	var sb strings.Builder
 	sb.WriteString("SELECT %s FROM conversations WHERE 1=1")
@@ -69,7 +69,7 @@ func (r *ConversationMySqlRepository) GetList(f *domain.ConversationFilter) ([]d
 	}
 
 	// Get total count for pagination
-	var total int64
+	var total uint64
 	countQuery := fmt.Sprintf(sb.String(), "COUNT(*) AS total")
 
 	err = r.db.QueryRowContext(context.Background(), countQuery).Scan(&total)

@@ -23,7 +23,7 @@ func (s *FullCycleTestSuite) getConversationList() []domain.Conversation {
 	err = json.NewDecoder(res.Body).Decode(&resBody)
 	s.Require().NoError(err)
 	s.Len(resBody.Data.Items, 1)
-	s.Equal(int64(1), resBody.Data.Total)
+	s.Equal(uint64(1), resBody.Data.Total)
 
 	return resBody.Data.Items
 }

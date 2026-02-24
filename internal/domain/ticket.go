@@ -42,6 +42,7 @@ type TicketFilter struct {
 	ConversationID *uuid.UUID `json:"conversation_id,omitempty"`
 	TenantID       *uint      `json:"tenant_id,omitempty"`
 	Status         *string    `json:"status,omitempty"`
+	Filter
 }
 
 func (e *TicketEntity) ToDto() *Ticket {

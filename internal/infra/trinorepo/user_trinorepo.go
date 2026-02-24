@@ -39,7 +39,7 @@ func (u *UserTrinoRepository) GetByID(id uuid.UUID) (*domain.UserEntity, error) 
 }
 
 // GetList implements [repo.UserRepository].
-func (u *UserTrinoRepository) GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], int64, error) {
+func (u *UserTrinoRepository) GetList(filter *domain.UserFilter) (*domain.Paginated[domain.UserEntity], uint64, error) {
 	panic("unimplemented")
 }
 

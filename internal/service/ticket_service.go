@@ -8,35 +8,44 @@ import (
 	"time"
 
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain"
+	"github.com/dimasyanu/ivosights-sociomile/internal/domain/constant"
 	"github.com/dimasyanu/ivosights-sociomile/internal/domain/repo"
 	"github.com/dimasyanu/ivosights-sociomile/internal/infra"
 	"github.com/google/uuid"
 )
 
 type TicketService struct {
-	repo repo.TicketRepository
-	mq   infra.QueueClient
+	repo    repo.TicketRepository
+	convSvc *ConversationService
+	mq      infra.QueueClient
 }
 
-func NewTicketService(ticketRepo repo.TicketRepository, mq infra.QueueClient) *TicketService {
-	return &TicketService{repo: ticketRepo, mq: mq}
+func NewTicketService(ticketRepo repo.TicketRepository, convSvc *ConversationService, mq infra.QueueClient) *TicketService {
+	return &TicketService{repo: ticketRepo, convSvc: convSvc, mq: mq}
 }
 
-func (s *TicketService) GetList(f *domain.TicketFilter) ([]*domain.Ticket, uint64, error) {
+func (s *TicketService) GetList(f *domain.TicketFilter) (*domain.Paginated[domain.Ticket], error) {
 	ticketEntities, total, err := s.repo.GetList(f)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	tickets := make([]*domain.Ticket, len(ticketEntities))
-	for i, entity := range ticketEntities {
-		tickets[i] = entity.ToDto()
+	tickets := []domain.Ticket{}
+	for _, entity := range ticketEntities {
+		tickets = append(tickets, *entity.ToDto())
 	}
-	return tickets, total, nil
+	return &domain.Paginated[domain.Ticket]{
+		Items:    tickets,
+		Total:    total,
+		Page:     f.Page,
+		PageSize: f.PageSize,
+	}, nil
 }
 
 func (s *TicketService) GetByID(id uuid.UUID) (*domain.Ticket, error) {
 	ticketEntity, err := s.repo.GetByID(id)
 	if err != nil {
+		idStr := id.String()
+		fmt.Printf("%s", idStr)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, repo.ErrNotFound
 		}
@@ -81,8 +90,15 @@ func (s *TicketService) ticketCreatedEvent(t *domain.Ticket) {
 	}
 }
 
-func (s *TicketService) Create(e *domain.TicketEntity, pic string) (*domain.Ticket, error) {
-	t, err := s.GetByConversationID(e.ConversationID)
+func (s *TicketService) Create(convID uuid.UUID, title, description string, priority int8, pic string) (*domain.Ticket, error) {
+	// Check if conversation exists
+	conv, err := s.convSvc.GetByID(convID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if ticket already exists for this conversation
+	t, err := s.GetByConversationID(convID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return nil, err
 	}
@@ -90,11 +106,19 @@ func (s *TicketService) Create(e *domain.TicketEntity, pic string) (*domain.Tick
 		return nil, errors.New("ticket already exists for this conversation")
 	}
 
-	e.ID = uuid.New()
-	e.CreatedAt = time.Now()
-	e.CreatedBy = pic
-	e.UpdatedAt = time.Now()
-	e.UpdatedBy = pic
+	e := &domain.TicketEntity{
+		ConversationID: convID,
+		TenantID:       conv.TenantID,
+		Title:          title,
+		Description:    description,
+		ID:             uuid.New(),
+		CreatedAt:      time.Now(),
+		CreatedBy:      pic,
+		UpdatedAt:      time.Now(),
+		UpdatedBy:      pic,
+		Priority:       priority,
+		Status:         constant.TicketStatusOpen,
+	}
 
 	createdEntity, err := s.repo.Create(e)
 	if err != nil {
