@@ -18,7 +18,7 @@ func NewMessageRepository(db *sql.DB) repository.MessageRepository {
 }
 
 // Create implements [repository.MessageRepository].
-func (m *MessageMySqlRepository) Create(message *domain.MessageEntity) (uuid.UUID, error) {
+func (r *MessageMySqlRepository) Create(message *domain.MessageEntity) (uuid.UUID, error) {
 	id := uuid.New()
 	pairs := map[string]any{
 		"id":              id,
@@ -30,7 +30,7 @@ func (m *MessageMySqlRepository) Create(message *domain.MessageEntity) (uuid.UUI
 	cols, slots, vals := MapForCreate(pairs)
 
 	query := "INSERT INTO messages (" + cols + ") VALUES (" + slots + ")"
-	_, err := m.db.ExecContext(context.Background(), query, vals...)
+	_, err := r.db.ExecContext(context.Background(), query, vals...)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -39,16 +39,16 @@ func (m *MessageMySqlRepository) Create(message *domain.MessageEntity) (uuid.UUI
 }
 
 // Delete implements [repository.MessageRepository].
-func (m *MessageMySqlRepository) Delete(id uuid.UUID) error {
+func (r *MessageMySqlRepository) Delete(id uuid.UUID) error {
 	query := "DELETE FROM messages WHERE id = ?"
-	_, err := m.db.ExecContext(context.Background(), query, id)
+	_, err := r.db.ExecContext(context.Background(), query, id)
 	return err
 }
 
 // GetByConversationID implements [repository.MessageRepository].
-func (m *MessageMySqlRepository) GetByConversationID(id uuid.UUID, offset int64, limit int) ([]*domain.MessageEntity, int64, error) {
+func (r *MessageMySqlRepository) GetByConversationID(id uuid.UUID, offset int64, limit int) ([]*domain.MessageEntity, int64, error) {
 	query := "SELECT id, conversation_id, sender_type, message, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?"
-	rows, err := m.db.QueryContext(context.Background(), query, id, limit, offset)
+	rows, err := r.db.QueryContext(context.Background(), query, id, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -65,7 +65,7 @@ func (m *MessageMySqlRepository) GetByConversationID(id uuid.UUID, offset int64,
 
 	var total int64
 	countQuery := "SELECT COUNT(*) FROM messages WHERE conversation_id = ?"
-	err = m.db.QueryRowContext(context.Background(), countQuery, id).Scan(&total)
+	err = r.db.QueryRowContext(context.Background(), countQuery, id).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}

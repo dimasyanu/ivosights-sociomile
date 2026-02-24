@@ -12,6 +12,9 @@ import (
 	"github.com/dimasyanu/ivosights-sociomile/internal/service"
 )
 
+// Option: Implement a simple independent queue listener
+// func main() {}
+
 type QueueListener struct {
 	mq       infra.QueueClient
 	queue    string

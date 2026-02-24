@@ -1,3 +1,3 @@
 package graphql
 
-// TODO: Implement GraphQL delivery layer
+// Implement GraphQL delivery layer

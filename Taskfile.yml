@@ -2,10 +2,6 @@ version: '3'
 
 dotenv: ['.env']
 
-includes:
-  os:
-    taskfile: Taskfile_{{OS}}.yml
-
 tasks:
   build:
     cmds:
@@ -25,18 +21,10 @@ tasks:
   start-containers:
     cmds:
       - mkdir -p ./_run/mysql
+      - mkdir -p ./_run/rabbitmq
       - docker-compose up -d --wait
       - task: migrate
   
-  start-rabbitmq:
-    cmds:
-      - mkdir -p ./_run/rabbitmq
-      - docker-compose up -d rabbitmq --wait
-
-  test:
-    cmds:
-      - go test -count=1 ./... | grep -v '?'
-
   stop:
     cmds:
       - docker-compose down
@@ -44,19 +32,12 @@ tasks:
   clean:
     cmds:
       - docker-compose down --volumes --remove-orphans
-      - task: os:remove-rundir
-        vars:
-          TARGET: "./_run"
-  
-  reset-db:
-    cmds:
       - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
-      - goose up
-
-  reinit:
-    cmds:
-      - task: clean
       - task: start-containers
+
+  test:
+    cmds:
+      - go test -count=1 ./... | grep -v '?'
   
   default: 
     cmds:

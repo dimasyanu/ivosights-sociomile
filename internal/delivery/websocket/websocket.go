@@ -1,3 +1,3 @@
 package websocket
 
-// TODO: implement websocket delivery layer
+// implement websocket delivery layer

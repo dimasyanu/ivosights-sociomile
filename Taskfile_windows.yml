@@ -1,9 +1,0 @@
-version: '3'
-
-tasks:
-  remove-rundir:
-    cmds:
-      - powershell -Command "if (Test-Path '{{.TARGET}}') { Remove-Item -Recurse -Force '{{.TARGET}}' }"
-  sleep:
-    cmds:
-      - powershell -Command "Start-Sleep -Seconds {{.DELAY_SECONDS}}" # Wait for a few seconds
