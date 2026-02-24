@@ -28,7 +28,7 @@ func NewConversationHandler(svc *service.ConversationService, ticketSvc *service
 // @Param page_size query int false "Page size"
 // @Param status query string false "Filter by status (open, closed, assigned)"
 // @Success 200 {object} domain.Conversation
-// @Router /conversations [get]
+// @Router /api/v1/backoffice/conversations [get]
 func (h *ConversationHandler) GetConversations(ctx fiber.Ctx) error {
 	f := &domain.ConversationFilter{}
 
@@ -64,7 +64,7 @@ func (h *ConversationHandler) GetConversations(ctx fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Conversation ID"
 // @Success 200 {object} domain.Conversation
-// @Router /conversations/{id} [get]
+// @Router /api/v1/backoffice/conversations/{id} [get]
 func (h *ConversationHandler) GetConversationByID(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := uuid.Parse(idParam)
@@ -111,7 +111,7 @@ func (h *ConversationHandler) GetConversationByID(ctx fiber.Ctx) error {
 // @Param id path string true "Conversation ID"
 // @Param status body models.UpdateConversationStatusRequest true "New status for the conversation"
 // @Success 200 {object} any
-// @Router /conversations/{id}/status [put]
+// @Router /api/v1/backoffice/conversations/{id}/status [put]
 func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := uuid.Parse(idParam)
@@ -158,7 +158,7 @@ func (h *ConversationHandler) UpdateConversationStatus(ctx fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Conversation ID"
 // @Success 200 {object} any
-// @Router /conversations/{id}/escalate [post]
+// @Router /api/v1/backoffice/conversations/{id}/escalate [post]
 func (h *ConversationHandler) EscalateConversationToTicket(ctx fiber.Ctx) error {
 	// Get authenticated user
 	pic := ctx.Locals("user").(*domain.User)
@@ -220,7 +220,7 @@ func (h *ConversationHandler) EscalateConversationToTicket(ctx fiber.Ctx) error 
 // @Produce json
 // @Param id path string true "Conversation ID"
 // @Success 200 {object} any
-// @Router /conversations/{id} [delete]
+// @Router /api/v1/backoffice/conversations/{id} [delete]
 func (h *ConversationHandler) DeleteConversation(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := uuid.Parse(idParam)

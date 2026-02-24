@@ -76,6 +76,29 @@ func (s *MessageService) CreateMessage(tID uint, custID uuid.UUID, senderType st
 	return messageEntity.ToDto(), nil
 }
 
+func (s *MessageService) CreateMessageInConversation(convID uuid.UUID, senderType string, message string) (*domain.Message, error) {
+	// Check if conversation exists
+	conv, err := s.convSvc.GetByID(convID)
+	if err != nil {
+		return nil, err
+	}
+
+	messageEntity := &domain.MessageEntity{
+		ConversationID: conv.ID,
+		SenderType:     senderType,
+		Message:        message,
+		CreatedAt:      time.Now(),
+	}
+
+	id, err := s.repo.Create(messageEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	messageEntity.ID = id
+	return messageEntity.ToDto(), nil
+}
+
 func (s *MessageService) createNewConversation(tID uint, custID uuid.UUID, msg string) (*domain.Conversation, error) {
 	// If not found, create a new conversation
 	conv, err := s.convSvc.Create(tID, custID)

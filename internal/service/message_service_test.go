@@ -20,6 +20,7 @@ import (
 type MessageServiceTestSuite struct {
 	svc       *MessageService
 	tenantSvc *TenantService
+	userSvc   *UserService
 	cfg       *config.Config
 	convRepo  repo.ConversationRepository
 	db        *sql.DB
@@ -61,6 +62,7 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	s.convRepo = convRepo
 	msgRepo := mysqlrepo.NewMessageRepository(s.db)
 	tntRepo := mysqlrepo.NewTenantRepository(s.db)
+	userRepo := mysqlrepo.NewUserRepository(s.db)
 
 	// Initialize RabbitMQ client
 	s.mq, err = infra.NewRabbitMQClient(s.cfg.RabbitMQ)
@@ -71,6 +73,7 @@ func (s *MessageServiceTestSuite) SetupSuite() {
 	// Initialize services
 	convSvc := NewConversationService(convRepo, s.mq)
 	s.tenantSvc = NewTenantService(tntRepo)
+	s.userSvc = NewUserService(userRepo)
 	s.svc = NewMessageService(convSvc, msgRepo, s.mq)
 }
 
@@ -85,6 +88,9 @@ func (s *MessageServiceTestSuite) TearDownSuite() {
 
 func (s *MessageServiceTestSuite) TearDownTest() {
 	s.mq.Clear()
+	s.T().Log("Cleaning up conversations and messages ...")
+	s.db.Exec("DELETE FROM messages")
+	s.db.Exec("DELETE FROM conversations")
 }
 
 // ===== Tests =====
@@ -124,6 +130,47 @@ func (s *MessageServiceTestSuite) TestCreateMessage() {
 	// Verify that no message was published to the queue
 	published := client.GetPublishedMessages()
 	s.Len(published, 0)
+}
+
+func (s *MessageServiceTestSuite) TestCreateMessageWithExistingConversation() {
+	// Create an agent user
+	agentId, err := s.userSvc.CreateUser("Agent Smith", "agent@example.com", "password", []string{domain.RoleAgent}, "admin@mail.com")
+	s.NoError(err)
+	s.NotNil(agentId)
+
+	// Create a new tenant
+	tenant, err := s.tenantSvc.Create("Test Tenant")
+	s.NoError(err)
+	s.NotNil(tenant)
+
+	// Random customer ID for testing
+	customerID := uuid.New()
+
+	// Set up a convId
+	convId, err := s.convRepo.Create(&domain.ConversationEntity{
+		ID:         uuid.New(),
+		TenantID:   tenant.ID,
+		CustomerID: customerID,
+		Status:     constant.ConvStatusOpen,
+		CreatedAt:  time.Now(),
+	})
+	s.NoError(err)
+	s.NotNil(convId)
+
+	// Attempt to create a message with an existing conversation
+	msg := "Hello, I need help with my order."
+	message, err := s.svc.CreateMessage(tenant.ID, customerID, constant.SenderTypeCustomer, msg)
+	s.NoError(err)
+	s.NotNil(message)
+	s.Equal(convId, message.ConversationID)
+
+	// Wait briefly to ensure any asynchronous processing is complete
+	time.Sleep(time.Millisecond * 200)
+
+	newMsg, err := s.svc.CreateMessageInConversation(convId, constant.SenderTypeAgent, "Hello, how can I help you?")
+	s.NoError(err)
+	s.NotNil(newMsg)
+	s.Equal(convId, newMsg.ConversationID)
 }
 
 func (s *MessageServiceTestSuite) TestCreateMessageWithNewConversation_TriggersQueue() {

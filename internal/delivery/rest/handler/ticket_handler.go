@@ -26,7 +26,7 @@ func NewTicketHandler(svc *service.TicketService) *TicketHandler {
 // @Param page_size query int false "Page size"
 // @Param status query string false "Filter by status (open, closed, assigned)"
 // @Success 200 {object} domain.Ticket
-// @Router /tickets [get]
+// @Router /api/v1/backoffice/tickets [get]
 func (h *TicketHandler) GetTickets(ctx fiber.Ctx) error {
 	f := &domain.TicketFilter{}
 	// Bind query parameters to filter struct
@@ -61,7 +61,7 @@ func (h *TicketHandler) GetTickets(ctx fiber.Ctx) error {
 // @Param id path string true "Ticket ID"
 // @Param status body models.UpdateTicketStatusRequest true "New status for the ticket"
 // @Success 200 {object} domain.Ticket
-// @Router /tickets/{id}/status [put]
+// @Router /api/v1/backoffice/tickets/{id}/status [put]
 func (h *TicketHandler) UpdateTicketStatus(ctx fiber.Ctx) error {
 	idParam := ctx.Params("id")
 	id, err := uuid.Parse(idParam)

@@ -28,7 +28,7 @@ tasks:
   
   down:
     cmds:
-      - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
+      # - docker exec -it sociomile-mysql mysql -uroot -p{{.MYSQL_ROOT_PASSWORD}} -e "DROP DATABASE IF EXISTS {{.MYSQL_DATABASE}}; CREATE DATABASE {{.MYSQL_DATABASE}};"
       - docker-compose down --volumes --remove-orphans
       - docker image rm sociomile-app:latest
 

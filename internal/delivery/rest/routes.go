@@ -60,6 +60,7 @@ func RegisterRoutes(app *fiber.App, db *sql.DB, mq infra.QueueClient, envPath st
 	boff.Patch("/conversations/:id/status", convHandler.UpdateConversationStatus)
 	boff.Delete("/conversations/:id", convHandler.DeleteConversation)
 	boff.Post("/conversations/:id/escalate", convHandler.EscalateConversationToTicket)
+	boff.Post("/conversations/:id/messages", msgHandler.SendMessageToConversation)
 
 	boff.Get("/tickets", ticketHandler.GetTickets)
 	boff.Patch("/tickets/:id/status", withRolePolicy([]string{domain.RoleAdmin}), ticketHandler.UpdateTicketStatus)

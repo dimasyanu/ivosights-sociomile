@@ -95,6 +95,13 @@ definitions:
       access_token:
         type: string
     type: object
+  models.SendMessageRequest:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
   models.TenantCreateRequest:
     properties:
       name:
@@ -188,13 +195,159 @@ paths:
             $ref: '#/definitions/models.LoginResponse'
         "400":
           description: Bad Request
-          schema: {}
+          schema:
+            type: object
         "401":
           description: Unauthorized
-          schema: {}
+          schema:
+            type: object
       summary: User login
       tags:
       - auth
+  /api/v1/backoffice/conversations:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of conversations with optional filters
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by status (open, closed, assigned)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Conversation'
+      summary: Get list of conversations
+      tags:
+      - Conversations
+  /api/v1/backoffice/conversations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a conversation by its ID
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Delete conversation
+      tags:
+      - Conversations
+    get:
+      consumes:
+      - application/json
+      description: Get a single conversation by its ID
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Conversation'
+      summary: Get conversation by ID
+      tags:
+      - Conversations
+  /api/v1/backoffice/conversations/{id}/escalate:
+    post:
+      consumes:
+      - application/json
+      description: Escalate a conversation to a ticket.
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Escalate conversation to ticket
+      tags:
+      - Conversations
+  /api/v1/backoffice/conversations/{id}/messages:
+    post:
+      consumes:
+      - application/json
+      description: Send a message to an existing conversation by its ID.
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Message payload
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/models.SendMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Reply to an existing conversation
+      tags:
+      - Conversations
+  /api/v1/backoffice/conversations/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a conversation (open, closed, assigned)
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status for the conversation
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateConversationStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Update conversation status
+      tags:
+      - Conversations
   /api/v1/backoffice/tenants:
     get:
       consumes:
@@ -263,7 +416,8 @@ paths:
       responses:
         "200":
           description: OK
-          schema: {}
+          schema:
+            type: object
       summary: Delete a tenant
       tags:
       - Tenants
@@ -293,6 +447,61 @@ paths:
       summary: Update an existing tenant
       tags:
       - Tenants
+  /api/v1/backoffice/tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated list of tickets with optional filters
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by status (open, closed, assigned)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      summary: Get list of tickets
+      tags:
+      - Tickets
+  /api/v1/backoffice/tickets/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a ticket by its ID
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status for the ticket
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateTicketStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Ticket'
+      summary: Update ticket status
+      tags:
+      - Tickets
   /api/v1/backoffice/users:
     get:
       consumes:
@@ -361,7 +570,8 @@ paths:
       responses:
         "200":
           description: OK
-          schema: {}
+          schema:
+            type: object
       summary: Delete a user
       tags:
       - Users
@@ -411,7 +621,7 @@ paths:
       summary: Update an existing user
       tags:
       - Users
-  /api/v1/message:
+  /channel/webhook:
     post:
       consumes:
       - application/json
@@ -428,177 +638,9 @@ paths:
       responses:
         "201":
           description: Created
-          schema: {}
+          schema:
+            type: object
       summary: Handle incoming messages from channels
       tags:
       - Messages
-  /conversations:
-    get:
-      consumes:
-      - application/json
-      description: Get paginated list of conversations with optional filters
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: page_size
-        type: integer
-      - description: Filter by status (open, closed, assigned)
-        in: query
-        name: status
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.Conversation'
-      summary: Get list of conversations
-      tags:
-      - Conversations
-  /conversations/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a conversation by its ID
-      parameters:
-      - description: Conversation ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema: {}
-      summary: Delete conversation
-      tags:
-      - Conversations
-    get:
-      consumes:
-      - application/json
-      description: Get a single conversation by its ID
-      parameters:
-      - description: Conversation ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.Conversation'
-      summary: Get conversation by ID
-      tags:
-      - Conversations
-  /conversations/{id}/escalate:
-    post:
-      consumes:
-      - application/json
-      description: Escalate a conversation to a ticket.
-      parameters:
-      - description: Conversation ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema: {}
-      summary: Escalate conversation to ticket
-      tags:
-      - Conversations
-  /conversations/{id}/status:
-    put:
-      consumes:
-      - application/json
-      description: Update the status of a conversation (open, closed, assigned)
-      parameters:
-      - description: Conversation ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: New status for the conversation
-        in: body
-        name: status
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateConversationStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema: {}
-      summary: Update conversation status
-      tags:
-      - Conversations
-  /tickets:
-    get:
-      consumes:
-      - application/json
-      description: Get paginated list of tickets with optional filters
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Page size
-        in: query
-        name: page_size
-        type: integer
-      - description: Filter by status (open, closed, assigned)
-        in: query
-        name: status
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.Ticket'
-      summary: Get list of tickets
-      tags:
-      - Tickets
-  /tickets/{id}/status:
-    put:
-      consumes:
-      - application/json
-      description: Update the status of a ticket by its ID
-      parameters:
-      - description: Ticket ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: New status for the ticket
-        in: body
-        name: status
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateTicketStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.Ticket'
-      summary: Update ticket status
-      tags:
-      - Tickets
 swagger: "2.0"

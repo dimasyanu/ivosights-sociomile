@@ -8,3 +8,7 @@ type ChannelPayload struct {
 	Message    string    `json:"message" validate:"required"`
 	SenderType string    `json:"sender_type" validate:"required"`
 }
+
+type SendMessageRequest struct {
+	Message string `json:"message" validate:"required"`
+}
