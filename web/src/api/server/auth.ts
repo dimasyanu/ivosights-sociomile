@@ -5,7 +5,7 @@ import { useGlobalStore } from '@/stores/global'
 export default {
   login: async (email: string, password: string): Promise<void> => {
     const globalStore = useGlobalStore()
-    const basePath = import.meta.env.VITE_APP_API_BASE_PATH
+    const basePath = import.meta.env.VITE_APP_API_BASE_URL
     return fetch(`${basePath}/auth/login`, {
       method: 'POST',
       headers: {

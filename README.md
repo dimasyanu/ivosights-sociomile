@@ -43,6 +43,13 @@ Dokumentasi API dibuat menggunakan **Swagger** dengan bantuan library `swaggo/sw
 ## Database Migration
 Database migration menggunakan tool `goose`. File-file migrasi terdapat pada folder `db/migrations`. Untuk menjalankan migrasi, gunakan command `goose up`(migrasi sudah berjalan otomatis dengan menjalankan Taskfile -> Installation poin 4).
 
+## Frontend
+Untuk frontend, saya menggunakan **Vue.js** framework dengan **Vite** sebagai build tool. Frontend berada di folder `web`. Untuk menjalankan frontend, masuk ke folder `web` copy file `.env.example` menjadi `.env` dan jalankan command `npm install` dan `npm run dev`. 
+
+Fitur frontend belum sepenuhnya berfungsi, masih dalam tahap integrasi karena keterbatasan waktu.
+![frontend-1](images/frontend-1.png)
+![frontend-2](images/frontend-2.png)
+
 ## Asumsi dan trade-off
 1. Saya mengasumsikan bahwa setiap tenant memiliki struktur data yang sama, sehingga saya menggunakan pendekatan shared database untuk multi-tenancy.
 2. Karena saya kurang memahami kebutuhan spesifik untuk agent assignment pada suatu conversation yang baru/open, saya mengasumsikan semua agent memiliki kapasitas yang sama, sehingga untuk menentukan agent yang di-assign saya hanya memilih secara acak.
