@@ -25,6 +25,9 @@ Di project ini saya menggunakan Clean Architecture sehingga project dapat dengan
 
 Dengan menggunakan Clean Architecture, kita dapat memisahkan kode berdasarkan tanggung jawabnya. Contohnya saya menggunakan interface untuk mendefinisikan kontrak repository di dalam service, dan implementasinya berada di layer `infra`. Dengan begitu, jika suatu saat ingin mengganti implementasi repository (misalnya dari database MySQL ke PostgreSQL, atau distributed database), kita hanya perlu membuat implementasi baru tanpa harus mengubah kode di service/usecase.
 
+### Authentication & Authorization
+Untuk authentication, saya menggunakan JWT (JSON Web Token) yang di-generate saat user melakukan login. Token tersebut kemudian digunakan untuk mengakses API yang membutuhkan otentikasi. Untuk authorization, saya menggunakan role-based access control (RBAC) sederhana dengan dua role utama yaitu `admin` dan `agent`(implementasi ada di file [routes.go](https://github.com/dimasyanu/ivosights-sociomile/blob/main/internal/delivery/rest/routes.go#L69)).
+
 ### Message Bus
 Untuk asynchronous processing, saya menggunakan RabbitMQ sebagai message broker. Proses tersebut diimplementasikan di message service saat webhook menerima message dari channel eksternal, kemudian message tersebut akan diproses secara asynchronous oleh worker yang subscribe ke queue RabbitMQ.
 
