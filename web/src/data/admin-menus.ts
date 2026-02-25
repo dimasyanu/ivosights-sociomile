@@ -17,19 +17,19 @@ const menus: Menu[] = [
   {
     label: 'Conversations',
     name: 'conversations',
-    icon: 'category',
+    icon: 'conversation',
     component: () => import('@/pages/ConversationsPage.vue'),
   },
   {
     label: 'Tickets',
     name: 'tickets',
-    icon: 'category',
+    icon: 'tickets',
     component: () => import('@/pages/TicketsPage.vue'),
   },
   {
     label: 'Users',
     name: 'users',
-    icon: 'category',
+    icon: 'users',
     component: () => import('@/pages/UsersPage.vue'),
   },
 ]
